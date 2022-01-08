@@ -1,1 +1,22 @@
 \section{Probabilistic Modeling}
+Given a set of $n$ random variables $\mathcal{X} = \{X_1, X_2, \cdots X_n\}$ where $n$ is large, we want to build a joint probability distribution $P$ over this set. Explicitly representing the joint distribution is computationally expensive, since just having binary values variables requires the joint distribution to specify $2^n-1$ numbers, and for more practical variables, the count is too large. \\
+\marginnote{An example of a query can be - \texttt{Estimate the fraction of people with a bachelor's degree}.}
+We want to efficiently represent, estimate and answer inference queries on the distribution.
+\subsection{Alternatives to explicit joint distributions}
+$\triangleright$ Can we assume all columns are independent? \textbf{NO} - this is obviously a very bad assumption. \\
+\noindent$\triangleright$ Can we use data to detect highly correlated column pairs, and estimate their pairwise frequencies? \textbf{MAYBE} - but there might\\\noindent be too many correlated pairs, and the method is ad hoc.\\
+\marginnote{Note that we write that a set $X$ is conditionally independent of $Y$ given $Z$, i.e $X \ind Y|Z$ if \[ \Prob(X|Y,Z) = \Prob(X|Z)\]}
+\noindent To solve the above two not so good ways, we explore conditional independencies. It may be possible that $\texttt{income } \cancel{\ind} \texttt{ age}$ but \\\noindent$\texttt{income } {\ind} \texttt{ age}|\texttt{experience}$. \\
+Probabilistic graphical models use a graph-based representation as the basis for compactly
+encoding a complex distribution over a high-dimensional space. \\
+It is convenient to represent the independence assumption using a graph. The so called graphical model has nodes as the variables (continuous or discrete), and the edges represent direct interaction. If we consider directed edges, we talk about Bayesian Networks, and if we consider undirected edges, we talk about Markov Random Fields. \\
+Essentially the graphical model is a combination of the graph and potentials.
+\begin{defn}[Potentials]
+Potentials $\psi_c(\mathbf x_c)$ are scores for assignment of values to subsets c of directly
+interacting variables. We factorize the probability as a product of these potentials, i.e
+\begin{equation}
+	\text{Pr}(\mathbf x = x_1, \cdots, x_n) \propto \prod \psi_s(\mathbf x_s)
+\end{equation}
+\end{defn}
+
+

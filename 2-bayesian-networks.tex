@@ -1,1 +1,27 @@
 \section{Bayesian Networks}
+Bayesian Networks, also referred to as \textit{directed graphical models} are a family of probability distributions that has a compact parameterization representable using a directed graph. \\
+It is known that
+\begin{equation}
+\Prob(x_1, x_2, \cdots, x_n) = \Prob(x_1)\Prob(x_2|x_1)\Prob(x_3|x_2,x_1)\cdots\Prob(x_n|x_{n-1}, \cdots, x_1)
+\end{equation}
+A compact Bayesian Network is a distribution in which each factor in the above equation depends on the \textit{parent} variables represented by Pa($x_i$) for variable $x_i$. Thus, we have
+\begin{equation}
+\Prob(x_i|x_{i-1}, x_{i-2}, \cdots ,x_1) = \Prob(x_i|\text{Pa}(x_i))
+\end{equation}
+and the corresponding potentials at each node in terms of its parents are
+\begin{equation}
+\psi_i(x_i, \text{Pa}(x_i)) = \Prob(x_i, \text{Pa}(x_i))
+\end{equation}
+Thus,
+\begin{equation}
+	\Prob(x_1, x_2, \cdots, x_n) = \prod_{i=1}^n \Prob(x_i|\text{Pa}(x_i))
+\end{equation}
+Consider the situation when each variable can take $d$ values. The naive approach gives us $\mathcal{O}(d^n)$ parameters. If we think of the potentials as probability tables (with the rows corresponding to Pa($x_i$)) and columns corresponding to the values of $x_i$, with entries as $\psi_{i}(x_i, \text{Pa}(x_i))$, we can notice that if $|\text{Pa}(x_i)| \leq k$, then the number of parameters are $\mathcal{O}(d^{k+1})$, and for $n$ variables, we have $\mathcal{O}(nd^{k+1})$, which provides us the compact representation. \\
+Now we formally define these -
+\begin{defn}[Bayesian Network]
+A Bayesian Network is a directed graph $G = (V, E)$ together with 
+\begin{itemize}
+	\item[$\diamond$] a random variable $x_i$ for each node $i \in V$
+	\item[$\diamond$] a potential $\psi_i(x_i, \text{Pa}(x_i))$ for each node $i \in V$
+\end{itemize}
+\end{defn}

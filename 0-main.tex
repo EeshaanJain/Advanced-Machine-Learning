@@ -22,7 +22,8 @@
 
 % The following package makes prettier tables.  We're all about the bling!
 \usepackage{booktabs}
-
+\usepackage{tikzit}
+\input{sample.tikzstyles}
 % The units package provides nice, non-stacked fractions and better spacing
 % for units.
 \usepackage{units}
@@ -33,6 +34,7 @@
 \fvset{fontsize=\normalsize}
 % Small sections of multiple columns
 \usepackage{multicol}
+\usepackage{cancel}
 \usepackage{xcolor}
 \definecolor{DarkRed}{RGB}{139,0,0}
 \usepackage{hyperref}
@@ -66,12 +68,14 @@
 \newtheorem{warn}[thm]{Warning}
 \newtheorem{sch}[thm]{Scholium}
 
+\newcommand{\ind}{\rotatebox[origin=c]{90}{$\models$}}
 \newcommand{\Mod}[1]{\ (\text{mod}\ #1)}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\Q}{\mathbb{Q}}
 \newcommand{\F}{\mathbb{F}}
 \newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Prob}{\text{Pr}}
 \renewcommand{\P}{\mathbb{P}}
 \DeclareMathOperator{\Span}{Span}
 \DeclareMathOperator{\val}{val}
