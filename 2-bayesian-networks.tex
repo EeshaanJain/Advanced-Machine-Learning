@@ -71,7 +71,7 @@ Thus for $\mathcal G$ to be an I-map for $P$, any independence that asserts in $
 \begin{rem}[Notation Alert]
 Note that we will use the following interchangeably - $P$ satisfies the local conditional independencies satisfied by $\mathcal G$ and $\mathcal G$ is an I-map for $P$, i.e
 \begin{equation}
-	\text{Local-CI}(P, \mathcal G) \equiv \mathcal{I(G)} \subseteq \mathcal{I}(P)
+	\text{Local-CI}(P, \mathcal G) \equiv \mathcal{I_\ell(G)} \subseteq \mathcal{I}(P)
 \end{equation}
 \end{rem}
 \begin{thm}
@@ -133,7 +133,97 @@ It is possible that a different ordering in $\mathcal X$ gives rise to a differe
 \end{rem}
 \subsection{D-Separation}
 Our goal is to know when we can guarantee $\mathbf X \ind \mathbf Y|\mathbf Z$ holds given a BN  $\mathcal G$. The further discussion provides some cases where we can guarantee $\mathbf X\; \cancel\ind\; \mathbf Y|\mathbf Z$.
+\begin{marginfigure}
+\begin{center}
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+	\node[main] (x) {X};
+	\node[main] (z)[below of=x] {Z};
+	\node[main] (y)[below of=z, label=below:(a)] {Y};
+	\draw[->] (x) -- (z);
+	\draw[->] (z) -- (y);
+	\end{tikzpicture}
+	\hspace{1cm}
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (y) {Y};
+		\node[main] (z)[below of=y] {Z};
+		\node[main] (x)[below of=z, label=below:(b)] {X};
+		\draw[->] (y) -- (z);
+		\draw[->] (z) -- (x);
+	\end{tikzpicture}
+\end{center}
+\caption{Causal and evidential effect}
+\end{marginfigure}
+\begin{marginfigure}
+	\begin{center}
+		\begin{tikzpicture}[main/.style = {draw, circle}] 
+			\node[main] (z) {Z};
+			\node[main] (x)[below left of=z] {X};
+			\node[main] (y)[below right of=z] {Y};
+			\draw[->] (z) -- (x);
+			\draw[->] (z) -- (y);
+			\node (e) [below = of $(x)!0.5!(y)$] {(c)};
+		\end{tikzpicture}
+		\hspace{0.5cm}
+		\begin{tikzpicture}[main/.style = {draw, circle}] 
+			\node[main] (z) {Z};
+			\node[main] (x) [above left of=z] {X};
+			\node[main] (y)[above right of=z] {Y};
+			\draw[->] (y) -- (z);
+			\draw[->] (x) -- (z);
+			\node (e) [below = of $(z)$] {(d)};
+		\end{tikzpicture}
+	\end{center}
+	\caption{Common cause and common effect}
+\end{marginfigure}
 \begin{enumerate}
 	\item \textbf{Direct Connection:} If there is an edge $X \to Y$, then regardless of any $\mathbf Z$, we can find examples where they influence each other.
-	\item \textbf{Indirect Connection:} [To be added]
+	\item \textbf{Indirect Connection:} This means that there is a trail between the nodes in the graph. We consider the simple case when we a 3-node graph and $Z$ is between $X$ and $Y$. Consider the 4 diagrams to the left for reference.
+	\begin{enumerate}
+		\item \textit{Indirect causal effect:} $X$ cannot influence $Y$ via $Z$ if $Z$ is observed.
+		\item \textit{Indirect evidential effect:} This is similar to the previous case as dependence is a symmetric notion. Thus, $X$ can influence $Y$ via $Z$, only if $Z$ is not observed.
+		\item \textit{Common cause:} The conclusion is similar to (a) and (b).
+		\item \textit{Common effect:} (v-structure) This case is a bit tricky to understand, but the crux is that $X$ can influence $Y$ when either $Z$ or one of $Z$'s descendents is observed.
+	\end{enumerate}
+If we have flow of influence from $X$ to $Y$ via $Z$, we say that the trail $X \rightleftharpoons Y \rightleftharpoons Z$ is active.
+	\begin{equation}\label{eqn:dsep}
+	\begin{split}
+	&\begin{rcases}
+		\text{Causal trail: }& X \to Z \to Y\\
+		\text{Evidential trail: }&Y \to Z \to X \\
+		\text{Common cause: }& X \leftarrow Z \to Y \\
+	\end{rcases} \text{Active if and only if $Z$ is observed}\\
+&\begin{rcases}
+	\star \;\;	\text{Common effect: } X \to Z \leftarrow Y
+\end{rcases} \\
+&\hookrightarrow \text{Active if and only if $Z$ or one of $Z$'s descendent is observed}
+	\end{split}
+	\end{equation}
 \end{enumerate}
+Now, we can create a general notion of trails -
+\begin{defn}
+Let $\mathcal G$ be a BN, and $x_1 \rightleftharpoons \cdots \rightleftharpoons x_n$ be a trail in $\mathcal G$. Let $\mathbf Z \subset \{\text{observed variables}\}$. The trail is active given $\mathbf Z$ if
+\begin{itemize}
+	\item[$\diamond$] Whenever we have a v-structure $x_{i-1} \to x_i \leftarrow x_{i+1}$, then $x_i$ or one of its descendents are in $\mathbf Z$
+	\item[$\diamond$] No other node along the trail is in $\mathbf Z$.
+\end{itemize}
+We can see that if $x_1 \in \mathbf Z$ or $x_n \in \mathbf Z$, then the trail is inactive.
+\end{defn}
+\marginnote{Essentially in a DAG, $\mathbf Z$ d-separates $\mathbf X$ from $\mathbf Y$ if all paths $\mathcal P$ from any $\mathbf X$ to $\mathbf Y$ is blocked by $\mathbf Z$.\\A path $\mathfrak{P}$ is \textit{blocked} if it is active, i.e there is flow of influence.}
+\begin{defn}[d-separation]
+Let $\mathbf X, \mathbf Y, \mathbf Z$ be three sets of nodes in $\mathcal G$. We say that $\mathbf X$ and $\mathbf Y$ are d-separated given $\mathbf Z$, i.e $\text{d-sep}_\mathcal{G}(\mathbf X; \mathbf Y|\mathbf Z)$ if there is no active trail between any node $x \in \mathbf X$ and $y \in \mathbf Y$ given $\mathbf Z$.
+\end{defn}
+\marginnote{We use the same notation as $\mathcal{I}(P)$ as we can show that the independencies in $\mathcal{I}(\mathcal G)$ are those guaranteed to hold for every distribution over $\mathcal G$ (Theorem \ref{thm:global-markov-ind}).}
+\begin{defn}[Global Markov independencies]
+The set 
+\begin{equation}
+\mathcal{I(G)} \overset{\mathrm{def}}{=} \{(\mathbf X \ind \mathbf Y | \mathbf Z): \text{d-sep}_\mathcal{G}(\mathbf X; \mathbf Y | \mathbf Z)\}
+\end{equation}
+denoting the set of independencies corresponding to d-separation is the set of global Markov independencies. 
+\end{defn}
+\begin{thm}\label{thm:global-markov-ind}
+The d-separation test identifies the complete set of conditional independencies that hold in all distributions that conform to a given Bayesian Network.
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
+

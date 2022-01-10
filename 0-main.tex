@@ -5,11 +5,15 @@
 
 
 \newcommand{\bra}[1]{\left(#1\right)}
+
 \usepackage{clrscode3e}
 \usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
 \usepackage{tikz}
 \usetikzlibrary{calc,positioning}
 \usepackage{amsmath,amsthm, amssymb}
+\newenvironment{rcases}
+{\left.\begin{aligned}}
+{\end{aligned}\right\rbrace}
 \usepackage{mathrsfs}
 \usepackage[boxed,linesnumbered]{algorithm2e}
 \usetikzlibrary{shapes}
