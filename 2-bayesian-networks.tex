@@ -13,10 +13,36 @@ and the corresponding potentials at each node in terms of its parents are
 \psi_i(x_i, \text{Pa}(x_i)) = \Prob(x_i, \text{Pa}(x_i))
 \end{equation}
 Thus,
-\begin{equation}
+\begin{equation}\label{eqn:factorization}
 	\Prob(x_1, x_2, \cdots, x_n) = \prod_{i=1}^n \Prob(x_i|\text{Pa}(x_i))
 \end{equation}
-Consider the situation when each variable can take $d$ values. The naive approach gives us $\mathcal{O}(d^n)$ parameters. If we think of the potentials as probability tables (with the rows corresponding to Pa($x_i$)) and columns corresponding to the values of $x_i$, with entries as $\psi_{i}(x_i, \text{Pa}(x_i))$, we can notice that if $|\text{Pa}(x_i)| \leq k$, then the number of parameters are $\mathcal{O}(d^{k+1})$, and for $n$ variables, we have $\mathcal{O}(nd^{k+1})$, which provides us the compact representation. \\
+\marginnote{\begin{exmp}\label{exmp:bn-ind}
+\end{exmp}}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (a) {A}; 
+		\node[main] (b) [right of=a] {B};
+		\node[main] (c) [below of=a] {C};
+		\node[main] (d) [below of=b] {D};
+		\node[main] (e) [below = of $(c)!0.5!(d)$] {E};
+		\draw[->] (b) -- (d);
+		\draw[->] (c) -- (e);
+		\draw[->] (d) -- (e);
+	\end{tikzpicture}
+	\caption{Sample BN}
+\end{marginfigure}
+\marginnote{Consider the BN above. We will consider each variable at a time.
+	\begin{itemize}
+		\item[$\diamond$] $A$ has no parent, and has no descendent. Thus, \[ A \ind B, C, D, E\]
+		\item[$\diamond$] $B$ has no parent, but has $D$ as a descendent. Thus, \[B \ind A, C\]
+		\item[$\diamond$] $C$ has no parent, but has $E$ as a descendent. Thus, \[C \ind A, B, D\]
+		\item[$\diamond$] $D$ has $B$ as a parent, and has $E$ as the descendent. Thus, \[D \ind A, C|B\]
+		\item[$\diamond$] $E$ has $C$ and $D$ as parents, but has no descenent. Thus, \[I \ind A, B|C,D\]
+	\end{itemize}
+}
+Consider the situation when each variable can take $d$ values. The naive approach gives us $\mathcal{O}(d^n)$ parameters. If we think of the potentials as probability tables (with the rows corresponding to Pa($x_i$)) and columns corresponding to the values of $x_i$, with entries as $\psi_{i}(x_i, \text{Pa}(x_i))$, we can notice that if $|\text{Pa}(x_i)| \leq k$, then the number of parameters are $\mathcal{O}(d^{k+1})$, and for $n$ variables, we have $\mathcal{O}(nd^{k+1})$, which provides us the compact representation.
+\subsection{Definition}
 Now we formally define these -
 \begin{defn}[Bayesian Network]
 A Bayesian Network is a directed graph $G = (V, E)$ together with 
@@ -25,3 +51,89 @@ A Bayesian Network is a directed graph $G = (V, E)$ together with
 	\item[$\diamond$] a potential $\psi_i(x_i, \text{Pa}(x_i))$ for each node $i \in V$
 \end{itemize}
 \end{defn}
+For a variable $x_i$ in our Bayesian Network $\mathcal G$, denote $\text{ND}(x_i)$ as the non-descendents of $x_i$. The following local conditional independencies hold in $\mathcal G$ - 
+\begin{equation}
+	x_i \ind \text{ND}(x_i) | \text{Pa}(x_i)
+\end{equation}
+Example \ref{exmp:bn-ind} shows the independencies in a simple Bayesian Network.
+\begin{defn}[Factorization]	
+Let $\mathcal{G}$ be a Bayesian Network graph over the variables $\{X_i\}_{i=1}^n$. We say that a distribution $P$ over the same space factorizes according to $\mathcal G$ if $P$ can be expressed as a product described in Equation \ref{eqn:factorization}. Such factorization is also known as the chain rule for Bayesian Networks, and is denoted as $\text{Factorize}(P, \mathcal G)$.
+\end{defn}
+
+\begin{defn}
+Let $P$ be a distribution over $\mathcal X$. We define $\mathcal{I}(P)$ to be the set of independent assertions of the form $\mathbf X \ind \mathbf Y | \mathbf Z$ that hold in $P$.
+\end{defn}
+We can now write "$P$ satisfies the local independencies associated with $\mathcal  G$" as $\mathcal{I}_\ell(\mathcal G) \subseteq \mathcal{I}(P)$.
+\begin{defn}[Independency-Map]
+Let $\mathcal K$ be any graph object associated with a set of independencies $\mathcal{I}(\mathcal K)$. We call $\mathcal K$ an I-map for a set of independencies $\mathcal I$ if $\mathcal I(\mathcal K) \subseteq \mathcal I$.
+\end{defn}
+Thus for $\mathcal G$ to be an I-map for $P$, any independence that asserts in $\mathcal G$ must also assert in $P$, but $P$ can have additional independencies not reflected in $\mathcal G$.
+\begin{rem}[Notation Alert]
+Note that we will use the following interchangeably - $P$ satisfies the local conditional independencies satisfied by $\mathcal G$ and $\mathcal G$ is an I-map for $P$, i.e
+\begin{equation}
+	\text{Local-CI}(P, \mathcal G) \equiv \mathcal{I(G)} \subseteq \mathcal{I}(P)
+\end{equation}
+\end{rem}
+\begin{thm}
+Given a distribution $P(x_1, x_2, \cdots, x_n)$ and a directed acyclic graph (DAG) $\mathcal{G}$, 
+\begin{equation}
+\text{Local-CI}(P, \mathcal G) \Longleftrightarrow \text{Factorize}(P, \mathcal G)
+\end{equation}
+\end{thm}
+\begin{proof}
+($\implies$) We essentially need to show that if $\mathcal{G}$ is an I-map for $P$, then $P$ factorizes according to $\mathcal G$. Consider a topologically sorted order $x_1, x_2, \cdots, x_n$ in $\mathcal G$. $\text{Local-CI}(P, \mathcal G)$ tells us that $$\text{Pr}(x_i|x_{1}, \cdots, x_{i-1}) = \text{Pr}(x_i|\text{Pa}(x_i))$$
+We can write
+$$P(x_1, x_2, \cdots, x_n) = \prod_{i=1}^nP(x_i|x_1, \cdots, x_{i-1})$$
+Each term in the product can be simplified due to the notion of Local-CI stated above, and we reach Equation \ref{eqn:factorization}, proving factorization. \\
+($\impliedby$) Proof has been skipped.
+\end{proof}
+\subsection{Minimal Construction}
+Our goal is to construct a minimal and correct BN $\mathcal G$ to represent $P$. A DAG $\mathcal G$ is correct if all Local-CIs that are implied in $\mathcal G$ hold in $P$, and a DAG $\mathcal G$ is minimal if we cannot remove any edge(s) from $\mathcal G$ and still get a correct BN for $P$.
+
+ In the setting, we define our oracle $\mathscr{O}$ to whom we can ask any query of the type "\texttt{Is X $\ind$ Y|Z}?" pertaining to $P$ and get a boolean answer. We will query the oracle several times to build up our BN. The following algorithm constructs such a BN - \\
+\begin{algorithm}[H]\label{alg:bn-con}
+	\DontPrintSemicolon
+	\textbf{Variables:} $x_1, x_2, \cdots, x_n \longleftarrow$ ordered variables in $\mathcal{X}$\;
+	\textbf{Independencies:} $\mathcal I \longleftarrow$ set of independencies\;
+	$\mathcal G \longleftarrow$ Empty graph over $\mathcal X$\;
+	\For{$i=1$ to $n$}{
+		$\mathbf U \longleftarrow \{x_1, \cdots, x_{i-1}\}$ \Comment{Set of candidate parents of $x_i$} \;
+		\For{$U' \subseteq\{x_1, \cdots, x_{i-1}\}$}{
+		\If{$U' \subset U$ and $(x_i \ind \{x_1, \cdots, x_{i-1}\} - U'|U')\in\mathcal I $}{
+			$\mathbf{U} \longleftarrow U'$\;
+			}	
+	}
+	\Comment{Now we have the minimal set $\mathbf{U}$ satisfying $(x_i \ind \{x_1, \cdots, x_{i-1}\} - \mathbf U|\mathbf U)$} \;
+	\Comment{Now we set $\mathbf{U}$ to be the parents of $x_i$}\;
+	\For{$x_j \in \mathbf U$}{
+			Add $x_j \to x_i$ in $\mathcal G$
+		}
+	}
+	\Return{$\mathcal{G}$}
+	\caption{Minimal Bayesian Network Construction (I-Map)}
+\end{algorithm}
+We know sketch rough proofs for the claims of the algorithm.
+\begin{thm}
+The BN $\mathcal G$ constructed by algorithm \ref{alg:bn-con} is minimal, i.e we cannot remove any edge from the BN while maintaining the correctness of the BN for $P$.
+\end{thm}
+\begin{proof}
+By construction. A subset of $\text{ND}(x_i)$ were available when we chose parents of $\mathbf U$ minimally.
+\end{proof}
+\begin{thm}
+$\mathcal{G}$ constructed by the above algorithm is correct, i.e, the local-CIs induced by $\mathcal G$ hold in $P$.
+\end{thm}
+\begin{proof}
+The construction is such that $\text{Factorize}(P, \mathcal G)$ holds everytime. Since $\text{Factorize}(P, \mathcal G) \implies \text{Local-CI}(P, \mathcal G)$, the constructed BN satisfies the local-CIs of $P$.
+\end{proof}
+\marginnote{\begin{exmp}\label{exmp:bn-order}
+To be added.
+\end{exmp}}
+\begin{rem}[Importance of ordering]
+It is possible that a different ordering in $\mathcal X$ gives rise to a different BN, which although may be minimal, but may not be \textit{optimal}. A minimal BN is defined for a given ordering, while an optimal BN is defined over all orderings. Example \ref{exmp:bn-order} shows such a case.
+\end{rem}
+\subsection{D-Separation}
+Our goal is to know when we can guarantee $\mathbf X \ind \mathbf Y|\mathbf Z$ holds given a BN  $\mathcal G$. The further discussion provides some cases where we can guarantee $\mathbf X\; \cancel\ind\; \mathbf Y|\mathbf Z$.
+\begin{enumerate}
+	\item \textbf{Direct Connection:} If there is an edge $X \to Y$, then regardless of any $\mathbf Z$, we can find examples where they influence each other.
+	\item \textbf{Indirect Connection:} [To be added]
+\end{enumerate}
