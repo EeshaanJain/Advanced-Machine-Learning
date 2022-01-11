@@ -46,7 +46,7 @@ Consider the situation when each variable can take $d$ values. The naive approac
 Now we formally define these -
 \begin{defn}[Bayesian Network]
 A Bayesian Network is a directed graph $G = (V, E)$ together with 
-\begin{itemize}
+\begin{itemize}[leftmargin=1cm]
 	\item[$\diamond$] a random variable $x_i$ for each node $i \in V$
 	\item[$\diamond$] a potential $\psi_i(x_i, \text{Pa}(x_i))$ for each node $i \in V$
 \end{itemize}
@@ -110,6 +110,7 @@ Our goal is to construct a minimal and correct BN $\mathcal G$ to represent $P$.
 		}
 	}
 	\Return{$\mathcal{G}$}
+	
 	\caption{Minimal Bayesian Network Construction (I-Map)}
 \end{algorithm}
 We know sketch rough proofs for the claims of the algorithm.
@@ -202,7 +203,7 @@ If we have flow of influence from $X$ to $Y$ via $Z$, we say that the trail $X \
 Now, we can create a general notion of trails -
 \begin{defn}
 Let $\mathcal G$ be a BN, and $x_1 \rightleftharpoons \cdots \rightleftharpoons x_n$ be a trail in $\mathcal G$. Let $\mathbf Z \subset \{\text{observed variables}\}$. The trail is active given $\mathbf Z$ if
-\begin{itemize}
+\begin{itemize}[leftmargin=1cm]
 	\item[$\diamond$] Whenever we have a v-structure $x_{i-1} \to x_i \leftarrow x_{i+1}$, then $x_i$ or one of its descendents are in $\mathbf Z$
 	\item[$\diamond$] No other node along the trail is in $\mathbf Z$.
 \end{itemize}

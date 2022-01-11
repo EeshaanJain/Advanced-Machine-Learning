@@ -1,5 +1,91 @@
 \section{Probabilistic Modeling}
-Given a set of $n$ random variables $\mathcal{X} = \{X_1, X_2, \cdots X_n\}$ where $n$ is large, we want to build a joint probability distribution $P$ over this set. Explicitly representing the joint distribution is computationally expensive, since just having binary values variables requires the joint distribution to specify $2^n-1$ numbers, and for more practical variables, the count is too large. \\
+\subsection{Probability Theory}
+\marginnote{In a single coin toss, we have \[\Omega = \{\text{H}, \text{T}\}\]}
+We will briefly review probability in a rigorous sense. \\We define events considering we have a space of possible outcomes denoted by $\Omega$. $\mathcal S$ is a set of measurable events, to which we assign probabilities, and each event $\alpha \in \mathcal S$ is a subset of $\Omega$. \\
+The event space necessarily satisfies three properties - 
+\begin{enumerate}
+	\item It contains the empty event $\emptyset$ and the trivial event $\Omega$.
+	\item It is closed under union, i.e if $\alpha, \beta \in \mathcal S$, so is $\alpha \cup \beta$.
+	\item It is closed under complementation, i.e if $\alpha \in \mathcal S$, so is $\Omega - \alpha$. 
+\end{enumerate}
+\begin{defn}[Probability distribution]\label{defn:prob}
+A probability distribution $P$ over $(\Omega, \mathcal S)$ is a mapping of events in $\mathcal S$ to real values satisfying 
+\marginnote{A direct consequence of the properties is: \[P(\emptyset) = 0\]\[P(\alpha \cup \beta) = P(\alpha) + P(\beta) - P(\alpha \cap \beta)\]}
+\begin{itemize}[leftmargin=1cm]
+	\item[$\diamond$] $P(\alpha) \geq 0$ for all $\alpha \in \mathcal S$
+	\item[$\diamond$] $P(\Omega) = 1$
+	\item[$\diamond$] If $\alpha, \beta \in \mathcal S$ and $\alpha \cap \beta = \emptyset$, then $P(\alpha \cup \beta) = P(\alpha) + P(\beta)$
+\end{itemize}
+\end{defn}
+Conditional probability answers the question - after learning that event $\alpha$ is true, how does our belief about $\beta$ change? Formally, we define
+\begin{equation}
+	P(\beta|\alpha) = \dfrac{P(\alpha \cap \beta)}{P(\alpha)}
+\end{equation}
+It can be checked that this satisfies Definition \ref{defn:prob} and is a probability distribution. Noting that $P(\alpha \cap \beta) = P(\alpha) P(\beta|\alpha)$, we define the chain rule of conditional probabilities
+\begin{equation}
+P(\alpha_1 \cap \cdots\cap \alpha_k) = P(\alpha_1) P(\alpha_2|\alpha_1) \cdots P(\alpha_k|\alpha_1\cap\cdots\cap\alpha_{k-1})
+\end{equation}
+We further define the Bayes' rule
+\begin{equation}\label{eqn:bayes}
+P(\alpha|\beta) = \dfrac{P(\beta|\alpha)P(\alpha)}{P(\beta)}
+\end{equation}
+Here, $P(\alpha|\beta)$ is called the \textit{posterior}, $P(\beta|\alpha)$ is the \textit{likelihood}, $P(\alpha)$ is the \textit{prior} and $P(\beta)$ is the \textit{marginal probability} of the structure in context. We can generalize Equation \ref{eqn:bayes} as
+\begin{equation}
+P(\alpha|\beta \cap \gamma) = \dfrac{P(\beta|\alpha \cap \gamma)P(\alpha|\gamma)}{P(\beta|\gamma)}
+\end{equation}
+Now, we formally define the notion of random variables, which intuitively can be considered to be attribute reporters.
+\begin{defn}[Random Variable]
+	A random variable $X$ is a \textit{measurable} function $X:\Omega \to \mathcal S$. The probability that $X$ takes values in a set $s \in \mathcal S$ is written as
+	\begin{equation}
+		\text{Pr}(X \in s) = \text{Pr}(\{\omega \in \Omega|X(\omega) \in s\})
+	\end{equation}
+\end{defn}
+The marginal distribution over a random variable $X$ is the distribution over events that can be described using $X$, and is denoted by $P(X)$. More generally, if we want to describe a distribution over a set of random variables $\mathcal X = \{x_1, \cdots, x_n\}$ called the \textit{joint distribution} denoted as $P(x_1, \cdots, x_n)$. The full assignment to the variables is denoted as $\xi \in \text{Val}(\mathcal X)$. The space corresponding to the joint assignment in $\mathcal X$ is called the \textit{canonical outcome space}. \\
+Now, we glance at independencies, a core component of Probabilistic Graphical Models.
+\begin{defn}[Independence]
+An event $\alpha$ is independent of an event $\beta$ denoted by $P \models (\alpha\ind\beta)$, if $P(\alpha|\beta) = P(\alpha)$ or $P(\beta) = 0$.
+\end{defn}
+\begin{prop}
+A distribution satisfies $(\alpha \ind \beta)$ if and only if 
+\begin{equation}
+P(\alpha\cap\beta) = P(\alpha)P(\beta)
+\end{equation}
+\end{prop}
+\begin{proof}
+Skipped (hint: Use the definition of conditional probability).
+\end{proof}
+\begin{defn}[Conditional Indpendence]
+An event $\alpha$ is conditionally independent of event $\beta$ given $\gamma$ in $P$, denoted by $P \models (\alpha \ind\beta|\gamma)$ if $P(\alpha|\beta\cap\gamma) = P(\alpha|\gamma)$ or if $P(\beta\cap\gamma) = 0$.
+\end{defn}
+\begin{prop}
+$P$ satisfies $(\alpha\ind\beta|\gamma)$ if and only if 
+\begin{equation}
+P(\alpha \cap\beta|\gamma) = P(\alpha|\gamma)P(\beta|\gamma)
+\end{equation}
+\end{prop}
+\begin{defn}
+Let $\mathbf{X, Y, Z}$ be sets of random variables. $\mathbf X$ is conditionally independent of $\mathbf Y$ given $\mathbf Z$ in a distribution $P$ if $P$ satisfies $(\mathbf X = \mathbf x \ind \mathbf Y = \mathbf y | \mathbf Z = \mathbf z)$ for all values of $\mathbf x \in \text{Val}(\mathbf X), \mathbf y \in \text{Val}(\mathbf Y)$ and $\mathbf z \in \text{Val}(\mathbf Z)$. We say that the variables in $\mathbf Z$ are \textit{observed}. If $\mathbf Z$ is empty, then we say that $\mathbf X$ and $\mathbf Y$ are marginally independent.
+\end{defn}
+\begin{prop}
+The distribution $P$ satisfies $(\mathbf X \ind \mathbf Y|\mathbf Z)$ if and only if 
+\begin{equation}
+	P(\mathbf X,\mathbf Y|\mathbf Z) = P(\mathbf X|\mathbf Z)P(\mathbf Y|\mathbf Z)
+\end{equation}
+\end{prop}
+The following properties hold for conditional independencies:
+\begin{enumerate}
+	\item \textit{Symmetry:} $(\mathbf X \ind \mathbf Y|\mathbf Z) \implies (\mathbf Y \ind \mathbf X|\mathbf Z)$
+	\item \textit{Decomposition:} $(\mathbf X \ind \mathbf{Y, W}|\mathbf Z) \implies (\mathbf X \ind \mathbf Y|\mathbf{Z})$
+	\item \textit{Weak Union:} $(\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z) \implies (\mathbf X \ind \mathbf Y|\mathbf Z,  \mathbf W)$
+	\item \textit{Contraction:} $(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y)\; \& \;(\mathbf X \ind \mathbf Y|\mathbf Z) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
+\end{enumerate}
+If our distribution is positive (i.e, for all non-empty $\alpha \in \mathcal S, P(\alpha) > 0$), we have another property
+\begin{itemize}[leftmargin=1cm]
+	\item[$\diamond$] \textit{Intersection:}  $(\mathbf X \ind \mathbf Y|\mathbf Z, \mathbf Z)\; \& \;(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
+\end{itemize}
+
+\subsection{Probabilistic Graphical Models}
+Given a set of $n$ random variables $\mathcal{X} = \{x_1, x_2, \cdots x_n\}$ where $n$ is large, we want to build a joint probability distribution $P$ over this set. Explicitly representing the joint distribution is computationally expensive, since just having binary values variables requires the joint distribution to specify $2^n-1$ numbers, and for more practical variables, the count is too large. \\
 \marginnote{An example of a query can be - \texttt{Estimate the fraction of people with a bachelor's degree}.}
 We want to efficiently represent, estimate and answer inference queries on the distribution.
 \subsection{Alternatives to explicit joint distributions}
@@ -18,5 +104,4 @@ interacting variables. We factorize the probability as a product of these potent
 	\text{Pr}(\mathbf x = x_1, \cdots, x_n) \propto \prod \psi_s(\mathbf x_s)
 \end{equation}
 \end{defn}
-
 
