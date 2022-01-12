@@ -88,9 +88,8 @@ Each term in the product can be simplified due to the notion of Local-CI stated 
 ($\impliedby$) Proof has been skipped.
 \end{proof}
 \subsection{Minimal Construction}
-Our goal is to construct a minimal and correct BN $\mathcal G$ to represent $P$. A DAG $\mathcal G$ is correct if all Local-CIs that are implied in $\mathcal G$ hold in $P$, and a DAG $\mathcal G$ is minimal if we cannot remove any edge(s) from $\mathcal G$ and still get a correct BN for $P$.
-
- In the setting, we define our oracle $\mathscr{O}$ to whom we can ask any query of the type "\texttt{Is X $\ind$ Y|Z}?" pertaining to $P$ and get a boolean answer. We will query the oracle several times to build up our BN. The following algorithm constructs such a BN - \\
+Our goal is to construct a minimal and correct BN $\mathcal G$ to represent $P$. A DAG $\mathcal G$ is correct if all Local-CIs that are implied in $\mathcal G$ hold in $P$, and a DAG $\mathcal G$ is minimal if we cannot remove any edge(s) from $\mathcal G$ and still\\ \noindent get a correct BN for $P$.
+\\In the setting, we define our oracle $\mathscr{O}$ to whom we can ask any query of the type "\texttt{Is X $\ind$ Y|Z}?" pertaining to $P$ and get a boolean answer. We will query the oracle several times to build up our BN. The following algorithm constructs such a BN - \\
 \begin{algorithm}[H]\label{alg:bn-con}
 	\DontPrintSemicolon
 	\textbf{Variables:} $x_1, x_2, \cdots, x_n \longleftarrow$ ordered variables in $\mathcal{X}$\;
@@ -126,12 +125,60 @@ $\mathcal{G}$ constructed by the above algorithm is correct, i.e, the local-CIs 
 \begin{proof}
 The construction is such that $\text{Factorize}(P, \mathcal G)$ holds everytime. Since $\text{Factorize}(P, \mathcal G) \implies \text{Local-CI}(P, \mathcal G)$, the constructed BN satisfies the local-CIs of $P$.
 \end{proof}
-\marginnote{\begin{exmp}\label{exmp:bn-order}
-To be added.
-\end{exmp}}
+\begin{quest}[Construction of BN]
+Draw a Bayesian network over five variables $x_1,\cdots, x_5$ assuming the variable order $x_1, x_2, x_3, x_4, x_5$.
+For this ordering, assume that the following set of local CIs hold in the distribution: 
+\[x_1\ind x_2\quad x_3\ind x_2|x_1\quad x_4\ind x_1,x_3|x_2\quad x_5\ind x_1, x_2|x_3,x_4\]
+\end{quest}
+\begin{ans}
+Due to the ordering, we begin by inserting $x_1$ into the BN. Then we follow Algorithm \ref{alg:bn-con} as follows:
+\begin{enumerate}[leftmargin=1cm]
+	\item $x_2$: Predecessor - $x_1$ \\
+	\begin{itemize}[leftmargin=0.5cm]
+	\item	\textit{Query 1} - Is $x_2 \ind x_1 | \emptyset$ ? :\textit{ Result 1} - True
+	\end{itemize}
+	Thus, $x_2$ has no parents.
+	\item $x_3$: Predecessors - $x_1, x_2$
+	\begin{itemize}[leftmargin=0.5cm]
+		\item	\textit{Query 1} - Is $x_3 \ind \{x_1, x_2\} | \emptyset$ ? :\textit{ Result 1} - False
+		\item	\textit{Query 2} - Is $x_3 \ind  x_2 | x_1$ ? :\textit{ Result 2} - True
+	\end{itemize}
+	Thus, $x_3$ has $x_1$ as a parent, and $x_2$ as a non-descendent.
+	\item $x_4$: Predecessors - $x_1, x_2, x_3$
+	\begin{itemize}[leftmargin=0.5cm]
+		\item	\textit{Query 1} - Is $x_4 \ind \{x_1, x_2, x_3\} | \emptyset$ ? :\textit{ Result 1} - False
+		\item	\textit{Query 2} - Is $x_4 \ind  \{x_2, x_3\} | x_1$ ? :\textit{ Result 2} - False
+		\item	\textit{Query 3} - Is $x_4 \ind  \{x_1, x_3\} | x_2$ ? :\textit{ Result 3} - True
+	\end{itemize}
+	Thus, $x_4$ has $x_2$ as a parent, and $x_1, x_3$ as non-descendents.
+	\begin{marginfigure}\label{fig:bn-example}
+		\centering
+		\begin{tikzpicture}[main/.style = {draw, circle}] 
+			\node[main] (a) {$x_1$}; 
+			\node[main] (b) [right of=a] {$x_2$};
+			\node[main] (c) [below of=a] {$x_3$};
+			\node[main] (d) [below of=b] {$x_4$};
+			\node[main] (e) [below = of $(c)!0.5!(d)$] {$x_5$};
+			\draw[->] (a) -- (c);
+			\draw[->] (b) -- (d);
+			\draw[->] (c) -- (e);
+			\draw[->] (d) -- (e);
+		\end{tikzpicture}
+		\caption{BN Example}
+	\end{marginfigure}
+	\item $x_5$: Predecessors - $x_1, x_2, x_3, x_4$ \\
+	Check that it has $x_3, x_4$ as parents and $x_1, x_2$ as non-descendents.
+\end{enumerate}
+Thus, finally we get the BN as in Figure \ref{fig:bn-example}
+\end{ans}
+
+
 \begin{rem}[Importance of ordering]
 It is possible that a different ordering in $\mathcal X$ gives rise to a different BN, which although may be minimal, but may not be \textit{optimal}. A minimal BN is defined for a given ordering, while an optimal BN is defined over all orderings. Example \ref{exmp:bn-order} shows such a case.
 \end{rem}
+\begin{exmp}\label{exmp:bn-order}
+To be added
+\end{exmp}
 \subsection{D-Separation}
 Our goal is to know when we can guarantee $\mathbf X \ind \mathbf Y|\mathbf Z$ holds given a BN  $\mathcal G$. The further discussion provides some cases where we can guarantee $\mathbf X\; \cancel\ind\; \mathbf Y|\mathbf Z$.
 \begin{marginfigure}

@@ -75,13 +75,16 @@ The distribution $P$ satisfies $(\mathbf X \ind \mathbf Y|\mathbf Z)$ if and onl
 The following properties hold for conditional independencies:
 \begin{enumerate}
 	\item \textit{Symmetry:} $(\mathbf X \ind \mathbf Y|\mathbf Z) \implies (\mathbf Y \ind \mathbf X|\mathbf Z)$
+	\marginnote{Decomposition can also be stated as \[\mathbf{X\ind \{Y, Z\} \implies X\ind Y, X\ind Z}\]}
 	\item \textit{Decomposition:} $(\mathbf X \ind \mathbf{Y, W}|\mathbf Z) \implies (\mathbf X \ind \mathbf Y|\mathbf{Z})$
+	\marginnote{Weak Union can also be stated as \[\mathbf{X\ind \{Y, Z\} \implies X\ind Y|Z}\] But note that, if $\mathbf{X\ind Y}$ and $\mathbf{Z}\;\cancel\ind\;\{\mathbf{X,Y}\}$ then it is not necessary to have $\mathbf{X\ind Y|Z}$}
 	\item \textit{Weak Union:} $(\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z) \implies (\mathbf X \ind \mathbf Y|\mathbf Z,  \mathbf W)$
 	\item \textit{Contraction:} $(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y)\; \& \;(\mathbf X \ind \mathbf Y|\mathbf Z) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
+	\marginnote{Contraction can also be stated as \[\mathbf{X\ind Y|Z, X\ind Z \implies X\ind \{Y,Z\}}\]}
 \end{enumerate}
 If our distribution is positive (i.e, for all non-empty $\alpha \in \mathcal S, P(\alpha) > 0$), we have another property
 \begin{itemize}[leftmargin=1cm]
-	\item[$\diamond$] \textit{Intersection:}  $(\mathbf X \ind \mathbf Y|\mathbf Z, \mathbf Z)\; \& \;(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
+	\item[$\diamond$] \textit{Intersection:}  $(\mathbf X \ind \mathbf Y|\mathbf Z, \mathbf W)\; \& \;(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
 \end{itemize}
 
 \subsection{Probabilistic Graphical Models}

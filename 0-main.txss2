@@ -1,0 +1,45 @@
+{
+    "InternalPDFViewer": {
+        "Embedded": true,
+        "File": "0-main.pdf"
+    },
+    "Session": {
+        "Bookmarks": [
+            {
+                "bookmarkNumber": 1,
+                "fileName": "../../../../Samples/main.tex",
+                "lineNumber": 10,
+                "text": "main.tex\n\\usepackage{graphicx} % allow embedded images"
+            }
+        ],
+        "CurrentFile": "2-bayesian-networks.tex",
+        "FileVersion": 1,
+        "Files": [
+            {
+                "Col": 54,
+                "EditorGroup": 0,
+                "FileName": "0-main.tex",
+                "FirstLine": 0,
+                "FoldedLines": "",
+                "Line": 78
+            },
+            {
+                "Col": 204,
+                "EditorGroup": 0,
+                "FileName": "1-probabilistic-modeling.tex",
+                "FirstLine": 0,
+                "FoldedLines": "",
+                "Line": 83
+            },
+            {
+                "Col": 165,
+                "EditorGroup": 0,
+                "FileName": "2-bayesian-networks.tex",
+                "FirstLine": 100,
+                "FoldedLines": "",
+                "Line": 117
+            }
+        ],
+        "MasterFile": ""
+    }
+}
