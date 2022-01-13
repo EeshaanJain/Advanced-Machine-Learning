@@ -256,7 +256,7 @@ Let $\mathcal G$ be a BN, and $x_1 \rightleftharpoons \cdots \rightleftharpoons 
 \end{itemize}
 We can see that if $x_1 \in \mathbf Z$ or $x_n \in \mathbf Z$, then the trail is inactive.
 \end{defn}
-\marginnote{Essentially in a DAG, $\mathbf Z$ d-separates $\mathbf X$ from $\mathbf Y$ if all paths $\mathcal P$ from any $\mathbf X$ to $\mathbf Y$ is blocked by $\mathbf Z$.\\A path $\mathfrak{P}$ is \textit{blocked} if it is active, i.e there is flow of influence.}
+\marginnote{Essentially in a DAG, $\mathbf Z$ d-separates $\mathbf X$ from $\mathbf Y$ if all paths $\mathcal P$ from any $\mathbf X$ to $\mathbf Y$ is blocked by $\mathbf Z$.\\A path $\mathfrak{P}$ is \textit{blocked} if it is inactive, i.e there is no flow of influence.}
 \begin{defn}[d-separation]
 Let $\mathbf X, \mathbf Y, \mathbf Z$ be three sets of nodes in $\mathcal G$. We say that $\mathbf X$ and $\mathbf Y$ are d-separated given $\mathbf Z$, i.e $\text{d-sep}_\mathcal{G}(\mathbf X; \mathbf Y|\mathbf Z)$ if there is no active trail between any node $x \in \mathbf X$ and $y \in \mathbf Y$ given $\mathbf Z$.
 \end{defn}
@@ -274,4 +274,42 @@ The d-separation test identifies the complete set of conditional independencies 
 \begin{proof}
 Skipped.
 \end{proof}
-
+Now, we look at another way to check d-separation over BNs, but first we define some terms.
+\begin{defn}[Ancestral Graph]
+Given a graph $G = (V,E)$ and a set of nodes to focus on, say $V^* \subseteq V$, the ancestral graph ${G}^A$ is a subgraph induced by $V^A = V^* \cup \mathcal{A}(V^*)$ where $\mathcal{A}(V^*)$ denotes the ancestors of $V^*$. Thus,
+\begin{equation}
+G^A = G\braket{V^A} = (V^A, \{(u,v) | (u, v) \in E \text{ and } u, v \in V^A\})
+\end{equation}
+\begin{defn}[Markov Blanket]
+Given a random variable $Y$ in a random variable set $\mathcal X = {X_1, X_2, \cdots, X_n}$ , it's Markov Blanket is any subset $\mathcal S$ of $\mathcal X$, conditioned on which other variables are independent with $Y$, i.e
+\begin{equation}
+Y \ind \mathcal{X}\setminus\mathcal{S} | \mathcal S
+\end{equation}
+Thus, we can infer $Y$ from $\mathcal S$ itself, and the rest of the elements are redundant in observation.
+\end{defn}
+\marginnote{\begin{rem}\label{rem:bn-moral}Essentially we are finding an equivalent undirected graph for a DAG. We find all pairs of non-adjacent nodes having a common child, and add an undirected edge between them. Then we transform all directed edges in the resulting graph to undirected edges. \end{rem}}
+\end{defn}
+\begin{defn}[Moral graph]
+A moral graph of a directed acyclic graph $G$ is an undirected graph in which each node of the original $G$ is now connected to its \textit{Markov Blanket}.
+\end{defn}
+\begin{algorithm}[H]\label{alg:bn-moral}
+	\DontPrintSemicolon
+	\textbf{Given:} Bayesian Network $\mathcal G$, Condition to check $\mathcal{C}$: $\mathbf X \ind \mathbf Y | \mathbf Z$ \;
+	$\mathcal C \leftarrow$ False\;
+	$G = (V,E) \leftarrow$ Underlying DAG in $\mathcal G$. \;
+	$G^A = (V^A, E^A) \leftarrow$ Ancestral graph of $G$ \;
+	$G^A_M = (V^A_M, E^A_M)\leftarrow$ Moral graph of $G^A$ using Note \ref{rem:bn-moral} \;
+	\Comment{Delete the nodes in $\mathbf Z$ and all its connections}\;
+	\For{$z \in \mathbf Z$}{
+		$\Xi \leftarrow \{\}$\;
+		\For{$u \in V$ such that $\xi=(u, z) \in E^A_M$}{
+			$\Xi \leftarrow \Xi \cup \xi$\;
+		}
+		$E^A_M \leftarrow E^A_M \setminus \Xi$\;
+		$V^A_M \leftarrow V^A_M \setminus \{z\}$\;
+	}
+	\If{$\mathbf X$ and $\mathbf Y$ are disconnected in the resulting graph}{
+		$\mathcal C \leftarrow$ True\;
+	}
+	\caption{Checking for independence in a BN}
+\end{algorithm}
