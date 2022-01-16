@@ -1,0 +1,69 @@
+\section{Markov Random Fields}
+\subsection{Intuition}
+We saw previously that we cannot draw a \textit{perfect} I-map such that $\mathcal I(\mathcal G) = \mathcal{I}(P)$ for any distribution $P$ using directed graphical models. Such too is the case with undirected graphical models, but they help us to represent some of these independencies which directed graphs couldn't.\\
+To be added.
+
+\subsection{Cliques}
+\begin{defn}[Complete Graph]
+A complete graph is a simple undirected graph in which every pair of distinct vertices is connected by a unique edge.
+\end{defn}
+
+\begin{defn}[Clique]
+A clique $C$ in an undirected graph $G = (V,E)$ is a subset of vertices, $C\subseteq V$ such that every two distinct vertices are adjacent. Thus, the subgraph induced by $C$, i.e $G\braket{C}$, is a complete graph.
+\end{defn}
+
+\begin{defn}[Maximal Clique]
+A clique that cannot be extended by including one more adjacent vertex (i.e it does not exist exclusively within the vertex set of a larger clique) is a maximal clique.		
+\end{defn}
+
+\begin{defn}[Maximum Clique]
+A maximum clique of a graph $G$, is a clique such that there is no other clique with more vertices.
+\end{defn}
+With each clique $C$, we associate a potential function $\psi$, which is a provisional function of its arguments that assigns a pre-probabilistic score of their joint distribution. It is to note that $\psi$ must be non-negative, but it shouldn't be interpreted as probability. 
+
+\subsection{Gibbs Fields}
+\begin{marginfigure}
+\centering
+\begin{tikzpicture}[main/.style = {draw, circle}] 
+	\node[main] (a) {$x_1$}; 
+	\node[main] (c) [right of=a] {$x_3$}; 
+	\node[main] (e) [right of=c] {$x_5$}; 
+	\node[main] (b) [below = of $(a)!0.5!(c)$] {$x_2$};
+	\node[main] (d) [below = of $(c)!0.5!(e)$] {$x_4$};
+	\draw[-] (a) -- (c);
+	\draw[-] (c) -- (e);
+	\draw[-] (c) -- (b);
+	\draw[-] (c) -- (d);
+	\draw[-] (a) -- (b);
+	\draw[-] (d) -- (e);
+\end{tikzpicture}
+\caption{A Gibbs Field}
+\label{fig:gibbs-field-ex}
+\end{marginfigure}
+A Gibbs Field is a representation of a set of random variables and their relationships. An example is in Figure \ref{fig:gibbs-field-ex}. In this, the edges are undirected and imply some correlation between the connected nodes. \\
+Consider clique potentials as $\psi_i(c_i)$. Then the joint probability for any set of random variables $\mathcal{X} = \{x_1, \cdots, x_n\}$ represented by a Gibbs Field can be written as a product of clique potentials
+\begin{equation}
+P(\mathcal X) = \dfrac{1}{Z} \prod_{c_i \in C} \psi_i(c_i)
+\end{equation}
+$Z$ is a normalizing constant required to create a valid probability distribution, i.e
+\begin{equation}
+Z = \sum_x \prod_{c_i \in C}\psi_i(C_i)
+\end{equation}
+\begin{rem}
+For any Gibbs Field, there is a subset $\hat{C}$ of $C$ consisting of only maximal cliques, which are not proper subsets of any other cliques. We write the potentials for these maximal cliques as products of all potentials of their sub-cliques, and thus state the joint probability as
+\begin{equation}
+	P(\mathcal X) = \dfrac{1}{Z}\prod_{c_i \in \hat C} \hat{\psi}_i(c_i)
+\end{equation}
+\end{rem}
+\subsection{Formal Definition}
+\begin{defn}[Markov Random Field]
+	A Markov Random Field (MRF) is a probability distribution $P$ over variables $x_1, \cdots, x_n$ defined by an undirected graph $G$ in which nodes correspond to variables $x_i$ and has the form
+	\begin{equation}
+		P(x_1, x_2, \cdots, x_n) = \dfrac{1}{Z}\prod_{c \in C} \psi_c(x_c)
+	\end{equation}
+	where 
+	\begin{equation}
+		Z = \sum_{x_1, \cdots, x_n}\prod_{c \in C} \phi_c (x_c)
+	\end{equation}
+	is the \textbf{\textit{partition function}} which is the normalizing constant ensuring the distribution sums to 1.
+\end{defn}

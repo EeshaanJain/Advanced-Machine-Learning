@@ -86,7 +86,15 @@ If our distribution is positive (i.e, for all non-empty $\alpha \in \mathcal S, 
 \begin{itemize}[leftmargin=1cm]
 	\item[$\diamond$] \textit{Intersection:}  $(\mathbf X \ind \mathbf Y|\mathbf Z, \mathbf W)\; \& \;(\mathbf X \ind \mathbf W|\mathbf Z, \mathbf Y) \implies (\mathbf X \ind \mathbf Y, \mathbf W|\mathbf Z)$
 \end{itemize}
-
+\begin{thm}\label{thm:factor}
+Consider $\mathcal{X} = \mathbf{\{X, Y, Z\}}$. Then $P\models (\mathbf X \ind \mathbf Y | \mathbf Z)$ if and only if we can write 
+\begin{equation}
+P(\mathcal X) = \phi_1(\mathbf{X, Z})\phi_2(\mathbf{Y, Z})
+\end{equation}
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
 \subsection{Probabilistic Graphical Models}
 Given a set of $n$ random variables $\mathcal{X} = \{x_1, x_2, \cdots x_n\}$ where $n$ is large, we want to build a joint probability distribution $P$ over this set. Explicitly representing the joint distribution is computationally expensive, since just having binary values variables requires the joint distribution to specify $2^n-1$ numbers, and for more practical variables, the count is too large. \\
 \marginnote{An example of a query can be - \texttt{Estimate the fraction of people with a bachelor's degree}.}

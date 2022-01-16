@@ -74,6 +74,18 @@ Note that we will use the following interchangeably - $P$ satisfies the local co
 	\text{Local-CI}(P, \mathcal G) \equiv \mathcal{I_\ell(G)} \subseteq \mathcal{I}(P)
 \end{equation}
 \end{rem}
+\begin{defn}[I-equivalence]
+Two Bayesian Networks $\mathcal{G}_1$ and $\mathcal{G}_2$ are $\mathcal{I}$-equivalent, if the encode the same dependencies, i.e
+\begin{equation}
+	\mathcal{I(G}_1) = \mathcal{I(G}_2)
+\end{equation}
+\end{defn}
+\begin{thm}
+If $\mathcal{G}_1$ and $\mathcal{G}_2$ have the same skeleton, and the same v-structures (see \hyperref[subsec:dsep]{D-separation}), then they are $\mathcal I$-equivalent.
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
 \begin{thm}
 Given a distribution $P(x_1, x_2, \cdots, x_n)$ and a directed acyclic graph (DAG) $\mathcal{G}$, 
 \begin{equation}
@@ -151,7 +163,7 @@ Due to the ordering, we begin by inserting $x_1$ into the BN. Then we follow Alg
 		\item	\textit{Query 3} - Is $x_4 \ind  \{x_1, x_3\} | x_2$ ? :\textit{ Result 3} - True
 	\end{itemize}
 	Thus, $x_4$ has $x_2$ as a parent, and $x_1, x_3$ as non-descendents.
-	\begin{marginfigure}\label{fig:bn-example}
+	\begin{marginfigure}
 		\centering
 		\begin{tikzpicture}[main/.style = {draw, circle}] 
 			\node[main] (a) {$x_1$}; 
@@ -165,6 +177,7 @@ Due to the ordering, we begin by inserting $x_1$ into the BN. Then we follow Alg
 			\draw[->] (d) -- (e);
 		\end{tikzpicture}
 		\caption{BN Example}
+		\label{fig:bn-example}
 	\end{marginfigure}
 	\item $x_5$: Predecessors - $x_1, x_2, x_3, x_4$ \\
 	Check that it has $x_3, x_4$ as parents and $x_1, x_2$ as non-descendents.
@@ -177,9 +190,50 @@ Thus, finally we get the BN as in Figure \ref{fig:bn-example}
 It is possible that a different ordering in $\mathcal X$ gives rise to a different BN, which although may be minimal, but may not be \textit{optimal}. A minimal BN is defined for a given ordering, while an optimal BN is defined over all orderings. Example \ref{exmp:bn-order} shows such a case.
 \end{rem}
 \begin{exmp}\label{exmp:bn-order}
-To be added
+Consider the BN shown in Figure \ref{fig:bn-ordering-good}, with the ordering $x_1, x_2, x_3$. We have $x_1 \ind x_2$ as the only CI holding. Now consider our order changes to $x_3, x_2, x_1$. We follow the procedure as before, first inserting $x_3$ into the BN. Now
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (a) {$x_1$}; 
+		\node[main] (b) [right of=a] {$x_2$};
+		\node[main] (c) [below = of $(a)!0.5!(b)$] {$x_3$};
+		\draw[->] (a) -- (c);
+		\draw[->] (b) -- (c);
+	\end{tikzpicture}
+	\caption{BN Ordering (optimal)}
+	\label{fig:bn-ordering-good}
+\end{marginfigure}
+\begin{enumerate}
+	\item $x_2$: Predecessor - $x_3$
+	\begin{itemize}
+		\item \textit{Query 1 - }Is $x_2 \ind x_3 | \emptyset$ ? : \textit{Result 1 - }False
+	\end{itemize}
+	Thus, we have $x_3$ as a parent of $x_2$.
+	\begin{marginfigure}
+		\centering
+		\begin{tikzpicture}[->, main/.style = {draw, circle}] 
+			\node[main] (a) {$x_3$}; 
+			\node[main] (b) [below right of=a] {$x_2$};
+			\node[main] (c) [below right of=b] {$x_1$};
+			\path[every node/.style={font=\sffamily\small}]
+			(a) edge node [right] {} (b)
+			(b) edge node [right] {} (c)
+			(a) edge[bend right=45] node [left] {} (c);
+		\end{tikzpicture}
+		\caption{BN Ordering (non-optimal)}
+		\label{fig:bn-ordering-bad}
+	\end{marginfigure}
+	\item $x_1$: Predecessor - $x_3, x_2$
+	\begin{itemize}
+		\item \textit{Query 1 - }Is $x_1 \ind \{x_2,x_3\} | \emptyset$ ? : \textit{Result 1 - }False
+		\item \textit{Query 2 - }Is $x_1 \ind x_2 | x_3$ ? : \textit{Result 2 - }False
+		\item \textit{Query 3 - }Is $x_1 \ind x_3 | x_2$ ? : \textit{Result 3 - }False
+	\end{itemize}
+	Thus, we have both $x_2$ and $x_3$ as parents of $x_1$. \\
+\end{enumerate}
+Thus we get the BN as in Figure \ref{fig:bn-ordering-bad}, and see that the BN is minimal, but not optimal.
 \end{exmp}
-\subsection{D-Separation}
+\subsection{D-Separation}\label{subsec:dsep}
 Our goal is to know when we can guarantee $\mathbf X \ind \mathbf Y|\mathbf Z$ holds given a BN  $\mathcal G$. The further discussion provides some cases where we can guarantee $\mathbf X\; \cancel\ind\; \mathbf Y|\mathbf Z$.
 \begin{marginfigure}
 \begin{center}
@@ -313,3 +367,12 @@ A moral graph of a directed acyclic graph $G$ is an undirected graph in which ea
 	}
 	\caption{Checking for independence in a BN}
 \end{algorithm}
+\begin{defn}[Perfect map]
+A graph $\mathcal G$ is a perfect map (P-map) for a set of independencies $\mathcal I$ if $\mathcal{I(G)} = \mathcal I$. Also, $\mathcal G$ is P-map for a distribution $P$ if $\mathcal{I(G) = I(P})$.
+\end{defn}
+\subsection{Limitations}
+Consider the following set of CIs
+\begin{equation}
+	x \ind y \quad y \ind z \quad z \ind x \quad x \;\cancel\ind\; \{y, z\}
+\end{equation}
+If you try to draw the BN for any ordering of the variables $\{x, y, z\}$, you can check that you get extraneous edges, and we fail to capture at least one of the conditions above. Thus, a symmetric dependency of this sort is not possible to be represented by Bayesian Networks. This, gives rise to a different field of graphical modeling using \textit{Markov Networks}, which can represent some of these situations.
