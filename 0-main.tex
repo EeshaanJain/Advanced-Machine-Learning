@@ -41,6 +41,7 @@
 % Small sections of multiple columns
 \usepackage{multicol}
 \usepackage{cancel}
+\usepackage{multirow,array}
 \usepackage{xcolor}
 \definecolor{DarkRed}{RGB}{139,0,0}
 \usepackage{hyperref}
@@ -93,7 +94,7 @@
 \DeclareMathOperator{\dist}{dist}
 \DeclareMathOperator{\sbd}{sbd}
 \DeclareMathOperator{\capac}{cap}
-
+\DeclareMathOperator*{\argmax}{arg\,max} % thin space, limits underneath in displays
 
 % These commands are used to pretty-print LaTeX commands
 \newcommand{\doccmd}[1]{\texttt{\textbackslash#1}}% command name -- adds backslash automatically
@@ -115,5 +116,6 @@
 	\include{1-probabilistic-modeling}
 	\include{2-bayesian-networks}
 	\include{3-markov-random-fields}
+	\include{4-inference-queries}
 	% rem defn proof prop exmps quest
 \end{document}
