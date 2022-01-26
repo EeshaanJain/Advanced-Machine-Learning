@@ -264,10 +264,216 @@ Coming back to the general setting, for each variable $x_i$, we denote
 	\end{cases}
 \end{equation}
 
-We also need to define $\Prob(C_j|\ell_{j_1}, \ell_{j_2}, \ell_{j_3})$. To do this, we assign a non-zero probability to only those which make $C_j=T$. This can be done uniformly (say out of the 8 assignments, 5 give a non-zero value, then $\frac{1}{5}$ for each of those assignments, and $0$ to rest). Finally, we write the last probability $\Prob(\mathcal S|C_1, \cdots, C_K)$ as $1$ if $C_1, \cdots, C_K = T$, i.e all are true, and in the rest of the cases, we assign it as zero (note the difference here - the table for each $C_i$ had 8 rows, and the table for $\mathcal S$ has $2^K$ rows). The $2^K$ shows that it is not polynomial. This is again, not efficient. \\
+We also need to define $\Prob(C_j|\ell_{j_1}, \ell_{j_2}, \ell_{j_3})$. To do this, we assign a non-zero probability to only those which make $C_j=T$. This can be done uniformly (say out of the 8 assignments, 5 give a non-zero value, then $1$ for each of those assignments, and $0$ to rest - this is done because each $C_j$ is a deterministic function of the literals). Finally, we write the last probability $\Prob(\mathcal S|C_1, \cdots, C_K)$ as $1$ if $C_1, \cdots, C_K = T$, i.e all are true, and in the rest of the cases, we assign it as zero (note the difference here - the table for each $C_i$ had 8 rows, and the table for $\mathcal S$ has $2^K$ rows). The $2^K$ shows that it is not polynomial. This is again, not efficient. \\
 One small change we can do is that instead of having a single $\mathcal S$ in the last layer, have $K-1$, such that each $\mathcal{S}_i$ is connected to $C_{i-1}$ and $C_i$ as parents, and each $\mathcal{S}_i$ is a parent of $\mathcal{S}_{i+1}$. This allows us to create the probability table as $\Prob(\mathcal{S}_j | \mathcal{S}_{j-1}, C_{j-1}, C_j)$ which represents the logic
 \begin{equation}
 	\mathcal{S}_j =  \mathcal{S}_{j-1} \land C_{j-1} \land C_j 
 \end{equation} 
-This allows each $\mathcal{S}_j$ with 8 variables, bringing in the needed efficiency. \\
+This allows each $\mathcal{S}_j$ with 8 variables, bringing in the needed efficiency. More specifically, the space required now is polynomial, since each $S_j$ requires only $2^4$ space, each $C_j$ requires $2^5$ space and each $x_j$ requires just constant (2) space. Thus overall the space required is $\mathcal{O}((K-1)\cdot2^4 + K\cdot 2^5+2)$
+\\
 Finally, if we can answer $\Prob(\mathcal{S}_j=1) > 0$ positively, then we know that a $3$-SAT assignment exists, else it does not.
+\subsection{Variable Elimination on General Graphs}
+We saw that using brute-force (i.e an exponential number of operations), we could calculate the normalizer $Z$. This is impractical, and hence we need a more efficient way to do so. Let's define the problem again - \\
+Given an arbitrary set of potentials $\psi_C(x_C)$ in a graph $G$ where $C$ are the cliques in $G$, we need to find 
+\[ Z = \sum_{x_1,\cdots,x_n} \prod_C \psi_C(x_C)\]
+The algorithm to do so is as follows: \\
+\begin{algorithm}[H]\label{alg:var-elim}
+	\DontPrintSemicolon
+	\textbf{Input:} Graph $G$\;
+	\textbf{Variables:} $x_1, x_2, \cdots, x_n$ present in a \textit{good} ordering\;
+	$\mathcal F \longleftarrow \{\psi_C(x_C)$ where $C=$ cliques in $G$\}  \;
+	\For{$i=1$ to $n$}{
+		$\mathcal F_i \longleftarrow$ factors in $\mathcal F$ containing $x_i$\;
+		$\mathcal M_i \longleftarrow$ product of factors in $\mathcal F_i$\;
+		$m_i \longleftarrow \sum_{x_i} \mathcal M_i$\;
+		$\mathcal{F \longleftarrow (F}-\mathcal{F}_i) \cup \{m_i\}$\;
+	}
+	\caption{Variable Elimination}
+\end{algorithm}
+At the end, $\mathcal F$ consists of only a constant. Note that the product of factors isn't trivial, i.e we would need to multiply probability tables. To understand Algorithm \ref{alg:var-elim}, let's see an example.
+\begin{exmp}\label{exmp:var-elim}
+Say we have been given 5 variables, and the cliques are
+\[\psi_{12}(x_1, x_2), \psi_{24}(x_2, x_4), \psi_{23}(x_2, x_3), \psi_{45}(x_4, x_5), \psi_{35}(x_3, x_5)\]
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (4) {$x_4$}; 
+		\node[main] (2) [above left of=4] {$x_2$}; 
+		\node[main] (5) [above right of=4] {$x_5$}; 
+		\node[main] (3) [above right of=2] {$x_3$}; 
+		\node[main] (1) [left of=2] {$x_1$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (2) -- (3);
+		\draw[-] (2) -- (4);
+		\draw[-] (4) -- (5);
+		\draw[-] (3) -- (5);
+	\end{tikzpicture}
+	\caption{UGM for Example}
+	\label{fig:iq-var-elim}		
+\end{marginfigure}
+The corresponding graph is in Figure \ref{fig:iq-var-elim}. We can see that 
+\[Z = \sum_{x_1 \cdots x_5}\psi_{12}(x_1 x_2) \psi_{24}(x_2 x_4) \psi_{23}(x_2 x_3) \psi_{45}(x_4 x_5) \psi_{35}(x_3 x_5)\]
+Say our good ordering is $x_1, x_2, x_3, x_4, x_5$. So we start
+\begin{itemize}
+	\item[$\diamond$] First variable $x_1$ - 
+	\begin{align*}
+	\mathcal{F}_1 &= \{\psi_{12}(x_1, x_2)\} \\
+	\mathcal{M}_1(x_1, x_2) &= \psi_{12}(x_1, x_2) \\
+	m_1(x_2) &= \sum_{x_1}\mathcal{M}_1 \\
+	\mathcal{F} &= \{\psi_{24}(x_2, x_4), \psi_{23}(x_2, x_3), \psi_{45}(x_4, x_5), \psi_{35}(x_3, x_5), m_1(x_2)\}
+	\end{align*}
+\item[$\diamond$] Second variable $x_2$ - 
+\begin{align*}
+	\mathcal{F}_2 &= \{\psi_{24}(x_2, x_4), \psi_{23}(x_2, x_3), m_1(x_2)\} \\
+	\mathcal{M}_2(x_2, x_3, x_4) &= \psi_{12}(x_1, x_2)\psi_{23}(x_2, x_3) m_1(x_2) \\
+	m_2(x_3, x_4) &= \sum_{x_2}\mathcal{M}_2 \\
+	\mathcal{F} &= \{\psi_{45}(x_4, x_5), \psi_{35}(x_3, x_5), m_2(x_3, x_4)\}
+\end{align*}
+\item[$\diamond$] Third variable $x_3$ - 
+\begin{align*}
+	\mathcal{F}_3 &= \{\psi_{35}(x_3, x_5), m_2(x_3, x_4)\} \\
+	\mathcal{M}_3(x_3, x_4, x_5) &= \psi_{35}(x_3, x_5) m_2(x_3, x_4) \\
+	m_3(x_4, x_5) &= \sum_{x_3}\mathcal{M}_3 \\
+	\mathcal{F} &= \{\psi_{45}(x_4, x_5), m_3(x_4, x_5)\}
+\end{align*}
+\item[$\diamond$] Fourth variable $x_4$ - 
+\begin{align*}
+	\mathcal{F}_4 &= \{\psi_{45}(x_4, x_5), m_3(x_4, x_5)\} \\
+	\mathcal{M}_4(x_4, x_5) &= \psi_{45}(x_4, x_5)m_3(x_4, x_5) \\
+	m_4(x_5) &= \sum_{x_4}\mathcal{M}_4 \\
+	\mathcal{F} &= \{m_4(x_5)\}
+\end{align*}
+\end{itemize}
+\end{exmp}
+The above example showed how $\mathcal F$ is a singleton set at the end. We can also modify Algorithm \ref{alg:var-elim} to get $\Prob(x_i)$ as follows - 
+\begin{itemize}
+	\item[$\diamond$] In line $1$ of Algorithm \ref{alg:var-elim}, we choose a good ordering such that $x_i$ is last
+	\item[$\diamond$] The for loop in line 3 runs only for $n-1$ iterations
+	\item[$\diamond$] After this, at the end, $\mathcal F$ will consist of unnormalized values, sum of which will give $Z$, and each term divided by $Z$ will give the required probability.
+\end{itemize}
+What if we want to compute the MAP query? For that, we do the follwing - 
+\begin{itemize}
+	\item[$\diamond$] In line 6, we have $\hat{m}_i = \max_{x_i} \mathcal{M}_i$ and we have to keep around the maximizing assignment
+	\item[$\diamond$] In the end $\mathcal F$ consists of the required argmax.
+\end{itemize}
+\begin{thm}
+The complexity of the Variable Elimination algorithm is $\mathcal{O}(nm^w)$ where $w$ is the maximum number of variables in any factor.
+\end{thm}
+\begin{proof}[Sketch of proof]
+The bottleneck step in the algorithm's for loop is computing the product of factors, and in general if the factor has $\kappa$ variables, then the time to do the product will be $\mathcal{O}(m^\kappa)$.
+\end{proof}
+In Example \ref{exmp:var-elim}, we see that the time complexity is $\mathcal{O}(nm^3)$. If we started with $x_2$, our time complexity would've been $\mathcal{O}(nm^4)$.
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1)  {$x_1$}; 
+		\node[main] (4) [below of=1]{$x_4$}; 
+		\node[main] (2) [above of=1] {$x_2$}; 
+		\node[main] (3) [ right of=1] {$x_3$}; 
+		\node[main] (5) [ left of=1] {$x_5$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (1) -- (3);
+		\draw[-] (1) -- (4);
+		\draw[-] (1) -- (5);
+		\draw[-] (1) -- (5);
+	\end{tikzpicture}
+	\caption{Star Graph}
+	\label{fig:iq-star-graph}		
+\end{marginfigure}
+More interestingly, if we have a star graph (Figure \ref{fig:iq-star-graph}), and if we start with the centre node first, we encounter a very severe penalty in terms of time complexity. This elimination order will give you $\mathcal O(m^n)$ running time, while removing the non-central nodes first gives you just $\mathcal{O}(nm^2)$ running time.\\
+Unfortunately, choosing the optimal elimination order is NP hard in general. But for chordal (triangulated) graphs, the algorithm is polynomial time. But another problem we stumble upon is that if our graph is not triangular, optimal triangulation is NP hard (but there exist many heuristics to do this in polynomial time).
+\begin{defn}[Simplicial]
+A vertex in a graph $G$ is simplicial if its neighbors form a complete set.
+\end{defn}
+\begin{thm}
+Every triangulated graph is either complete or has at least two non-adjacent simplicial vertices.
+\end{thm}
+\begin{proof}
+To be added.
+\end{proof}
+The goal is to find an optimal ordering for inferring $\Prob(x_1)$, which means $x_1$ should be last.\\
+\begin{algorithm}[H]\label{alg:opt-order}
+	\DontPrintSemicolon
+	\textbf{Input:} Graph $G$, $n=$ number of vertices in $G$\;
+	\For{$i=1$ to $n$}{
+		$\pi_i \longleftarrow$ any simplicial vertiex in $G$ except $1$\;
+		Remove $\pi_i$ from $G$\;
+	}
+	\Return{ordering $\pi_1, \cdots, \pi_{n-1}$}
+	\caption{Optimal ordering for triangulated graph}
+\end{algorithm}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\begin{scope}
+		\node[main] (4) {$x_4$}; 
+		\node[main] (2) [above left of=4] {$x_2$}; 
+		\node[main] (5) [above right of=4, label=$G_1$] {$x_5$}; 
+		\node[main] (3) [above right of=2] {$x_3$}; 
+		\node[main] (1) [left of=2] {$x_1$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (2) -- (3);
+		\draw[-] (2) -- (4);
+		\draw[-] (4) -- (5);
+		\draw[-] (3) -- (5);
+		\draw[-] (3) -- (4);
+		\end{scope}
+		\begin{scope}[yshift=-1.5cm, xshift=0.7cm]
+		\node[main] (4) [label=$G_2$]{$x_4$}; 
+		\node[main] (3) [above left of=4] {$x_3$}; 
+		\node[main] (2) [below left of=3] {$x_2$}; 
+		\node[main] (1) [left of=2] {$x_1$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (2) -- (3);
+		\draw[-] (2) -- (4);
+		\draw[-] (3) -- (4);
+		\end{scope}
+		\begin{scope}[yshift=-3cm, xshift=0.7cm]
+			\node[main] (4) [label=$G_3$]{$x_4$}; 
+			\node[main] (2) [above left of=4] {$x_2$}; 
+			\node[main] (1) [below left of=2] {$x_1$}; 
+			\draw[-] (1) -- (2);
+			\draw[-] (2) -- (4);
+		\end{scope}
+	\begin{scope}[yshift=-4cm, xshift=-0.5cm]
+		\node[main] (2){$x_2$}; 
+		\node[main] (4) [label=$G_4$][right of=2] {$x_4$}; 
+		\draw[-] (4) -- (2);
+	\end{scope}
+	\end{tikzpicture}
+\caption{Sequence of graphs}
+\label{fig:iq-opt-order}		
+\end{marginfigure}
+\begin{exmp}
+Consider the triangulated graph $G_1$ given on the right for which we have to find the optimal ordering. We go over the iterations as follows
+\begin{enumerate}
+	\item  In $G_1$, we have $x_1$ and $x_5$ as simplicial vertices. Say we remove $x_5$ first, to get $G_2$.
+	\item In $G_2$, we have $x_1, x_3$ and $x_4$ as the simplicial vertices. Say we remove $x_3$ to get $G_3$.
+	\item In $G_3$, we have $x_1$ and $x_4$ as simplicial vertices. Say we remove $x_1$ to get $G_4$.
+	\item In $G_4$ we have $x_2$ and $x_4$ as simplicial vertices.
+	Say we remove $x_2$.
+\end{enumerate}
+The sequence of graphs is shown in Figure \ref{fig:iq-opt-order}. \\
+Thus, finally we get the ordering $x_5, x_3, x_1, x_4, x_2$ as an optimal ordering. 
+\end{exmp}
+\subsection{Multiple Inference Queries}
+The above subsection showed how we can calculate the optimal ordering and a single inference query. But say, we have been given a chain graph with potentials as $\psi_{i,i+1}(x_i, x_{i+1})$, say we need all $\Prob(x_1), \cdots, \Prob(x_n)$, can we do that faster? A no-brain method would be to use variable elimination $n$ times to get $\mathcal{O}(n^2m^2)$.
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1) {$x_1$}; 
+		\node[main] (2) [below right of=1] {$x_2$}; 
+		\node[main] (3) [above right of=2] {$x_3$}; 
+		\node[main] (4) [below right of=3] {$x_4$}; 
+		\node[main] (5) [above right of=4] {$x_5$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (2) -- (3);
+		\draw[-] (3) -- (4);
+		\draw[-] (4) -- (5);
+	\end{tikzpicture}
+	\caption{Chain graph}
+	\label{fig:iq-chain-graph}		
+\end{marginfigure}
+Say I have the chain graph in Figure \ref{fig:iq-chain-graph}. If we need to calculate $\Prob(x_1)$, we first remove $x_5$. This is followed by removing $x_4$, $x_3$ and $x_2$. \\
+Now if we want to calculate $\Prob(x_2)$. We can reuse the computation done in removing $x_5, x_4$ and $x_3$. \\
+We will see that if we skillfully reuse such computation, if each variable elimination run takes time $\mathfrak T$, the time for $n$ inference queries will take just $2\mathfrak T$.
