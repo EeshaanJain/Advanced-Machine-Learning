@@ -325,7 +325,7 @@ Say our good ordering is $x_1, x_2, x_3, x_4, x_5$. So we start
 \item[$\diamond$] Second variable $x_2$ - 
 \begin{align*}
 	\mathcal{F}_2 &= \{\psi_{24}(x_2, x_4), \psi_{23}(x_2, x_3), m_1(x_2)\} \\
-	\mathcal{M}_2(x_2, x_3, x_4) &= \psi_{12}(x_1, x_2)\psi_{23}(x_2, x_3) m_1(x_2) \\
+	\mathcal{M}_2(x_2, x_3, x_4) &= \psi_{12}(x_2, x_4)\psi_{23}(x_2, x_3) m_1(x_2) \\
 	m_2(x_3, x_4) &= \sum_{x_2}\mathcal{M}_2 \\
 	\mathcal{F} &= \{\psi_{45}(x_4, x_5), \psi_{35}(x_3, x_5), m_2(x_3, x_4)\}
 \end{align*}
@@ -477,3 +477,172 @@ The above subsection showed how we can calculate the optimal ordering and a sing
 Say I have the chain graph in Figure \ref{fig:iq-chain-graph}. If we need to calculate $\Prob(x_1)$, we first remove $x_5$. This is followed by removing $x_4$, $x_3$ and $x_2$. \\
 Now if we want to calculate $\Prob(x_2)$. We can reuse the computation done in removing $x_5, x_4$ and $x_3$. \\
 We will see that if we skillfully reuse such computation, if each variable elimination run takes time $\mathfrak T$, the time for $n$ inference queries will take just $2\mathfrak T$.
+\begin{rem}
+Refer to Example \ref{exmp:var-elim}. In this notice that the arguments of $\mathcal M_i (\cdot)$ are cliques with \textit{induced} edges. For example, we have $\mathcal{M}_1(x_1, x_2)$ and clearly $\{x_1, x_2\}$ forms a clique. Second, we have $\mathcal{M}_2(x_2, x_3, x_4)$ and notice that when we add or \textit{induce} an edge between $x_2$ and $x_3$, $\{x_2, x_3, x_4\}$ forms a clique. This can be extended to all $\mathcal{M}_i(\cdot)$. For our notion of reusing, we are interested in the maximal cliques formed, and you can check that they refer to the cliques formed by the arguments of $\mathcal{M}_1, \mathcal{M}_2$ and $\mathcal{M}_3$.
+\end{rem}
+\subsection{Junction Trees}
+The junction tree algorithm is an optimal general-purpose algorithm for \textbf{exact} marginal or MAP queries, and can simultaneously compute many such queries. It utilizes efficient data structures and overall has a complexity of $\mathcal O(m^wN)$ where $w$ is the size of the largest clique in the triangulated graph and each variable can take $m$ values. It is to note that 
+\begin{itemize}
+	\item[$\diamond$] Viterbi algorithm of Hidden Markov Models
+	\item[$\diamond$] Forward-backward algorithm of Kalman Filters
+\end{itemize}
+are special cases of junction trees.
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1)  {$x_1$}; 
+		\node[main] (3) [below right of=1]{$x_3$}; 
+		\node[main] (2) [above right of=1] {$x_2$}; 
+		\node[main] (4) [right of=3] {$x_4$}; 
+		\node[main] (5) [above right of=4] {$x_5$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (1) -- (3);
+		\draw[-] (2) -- (3);
+		\draw[-] (3) -- (4);
+		\draw[-] (4) -- (5);
+	\end{tikzpicture}
+	\caption{Sample graph for JT}
+	\label{fig:iq-jt-graph}		
+\end{marginfigure}
+\begin{defn}[Junction Tree]
+Junction tree JT of a triangulated graph $G$ with nodes $x_1, \cdots, x_n$ is a tree where the nodes are the maximal cliques of $G$ and the edges obey the \textit{running intersection property}. This property states that if any two nodes contain variable $x_i$, then $x_i$ is present in every node in the unique path between them.
+\end{defn}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (123)  {$1,2,3$}; 
+		\node[main] (34) [below of=123]{$3,4$}; 
+		\node[main] (45) [below of=34] {$4,5$}; 
+		\draw[-] (123) -- (34);
+		\draw[-] (34) -- (45);
+	\end{tikzpicture}
+	\caption{Junction Tree example}
+	\label{fig:iq-jt-graph-jt}		
+\end{marginfigure}
+\begin{exmp}
+For the graph given in Figure \ref{fig:iq-jt-graph}, we have the maximal cliques as $\{x_1, x_2, x_3\}, \{x_3, x_4\}, \{x_4, x_5\}$. Thus, the junction tree for the graph is given in Figure \ref{fig:iq-jt-graph-jt}
+\end{exmp}
+\begin{thm}
+A graph will have a junction tree if and only if it is chordal.
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
+\noindent\textbf{Construction of a junction tree}\\
+If our graph is chordal, we have efficient polynomial time algorithms to create a JT. We first enumerate a set of maximal cliques covering our graph $G$, then we connect the cliques to get a tree satisfying the \textit{running intersection property}. Note that if our graph is non-triangulated, we need to triangulate it first using heuristics, since optimal triangulation is NP-hard.
+\begin{defn}[Optimal triangulation]
+A triangulation which gives rise to a JT where the size of the largest clique is smallest is called the optimal triangulation.
+\end{defn}
+\noindent A general method for finding heuristics is -
+\begin{verbatim}
+for i = 1 to n
+	choose the vertex for which some score is minimum
+	connect all neighbors of chosen vertex
+	remove the chosen vertex from the graph
+\end{verbatim}
+Some heuristics of triangulation are
+\begin{enumerate}
+	\item Choose the vertex with smallest degree and connect all its neighbors
+	\item Chose the vertex which will require the smallest number of edges to connect neighbors
+\end{enumerate}
+\begin{exmp}
+	Creation of a JT from a UGM:
+	\begin{enumerate}
+		\begin{marginfigure}
+			\centering
+			\begin{tikzpicture}[main/.style = {draw, circle}] 
+				\node[main] (1)  {$x_1$}; 
+				\node[main] (2) [right of=1] {$x_2$};
+				\node[main] (3) [above right of=2]{$x_3$};  
+				\node[main] (4) [below right of=2] {$x_4$}; 
+				\node[main] (5) [above right of=4] {$x_5$}; 
+				\draw[-] (1) -- (2);
+				\draw[-] (2) -- (3);
+				\draw[-] (2) -- (4);
+				\draw[-] (3) -- (5);
+				\draw[-] (4) -- (5);
+			\end{tikzpicture}
+			\caption{Non-chordal graph}
+			\label{fig:iq-jt-exmp-unchordal}	
+		\end{marginfigure}
+	\begin{marginfigure}
+		\centering
+		\begin{tikzpicture}[main/.style = {draw, circle}] 
+			\node[main] (1)  {$x_1$}; 
+			\node[main] (2) [right of=1] {$x_2$};
+			\node[main] (3) [above right of=2]{$x_3$};  
+			\node[main] (4) [below right of=2] {$x_4$}; 
+			\node[main] (5) [above right of=4] {$x_5$}; 
+			\draw[-] (1) -- (2);
+			\draw[-] (2) -- (3);
+			\draw[-] (2) -- (4);
+			\draw[-] (3) -- (5);
+			\draw[-] (4) -- (5);
+			\draw[dashed] (3) -- (4);
+		\end{tikzpicture}
+		\caption{Chordal graph}
+		\label{fig:iq-jt-exmp-chordal}	
+	\end{marginfigure}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}, sep/.style= {draw, rectangle}] 
+		\node[main] (12)  {$1,2$}; 
+		\node[sep] (2)  [below left of=12]{$2$}; 
+		\node[main] (234) [below left of=2] {$2,3,4$};
+		\node[sep] (34)  [right of=234]{$3,4$}; 
+		\node[main] (345) [right of=34] {$3,4,5$};
+		\draw[-] (12) -- (2);
+		\draw[-] (2) -- (234);
+		\draw[-] (234) -- (34);
+		\draw[-] (34) -- (345);
+	\end{tikzpicture}
+	\caption{Clique-node graph}
+	\label{fig:iq-jt-exmp-cliques}	
+\end{marginfigure}
+		\item Consider the graph in Figure \ref{fig:iq-jt-exmp-unchordal} as our starting graph. 
+		
+		\item We triangulate the graph to get the graph in Figure \ref{fig:iq-jt-exmp-chordal}. Notice that the maximal cliques are $C_1=\{x_1, x_2\}, C_2= \{x_2, x_3, x_4\}$ and $C_3=\{x_3, x_4, x_5\}$.
+		
+		\item These cliques act as nodes in our junction tree, and we connect the three cliques such that they satisfy the running intersection property. I have dropped the $x$ and just written the indices to avoid clutter. Note in Figure \ref{fig:iq-jt-exmp-cliques} that now we have two types of nodes - in circle we have the cliques, and in rectangles we have the \textit{separators}. Separators are variables present in the intersection of the nodes, thus
+		\begin{equation}
+		\text{Separator}(C_i, C_j) = C_i \cap C_j
+		\end{equation}
+	f
+		\item Now we assign potentials to all cliques. Note that from Example \ref{exmp:var-elim}, we had potentials $\psi_{12}, \psi_{23}, \psi_{24}, \psi_{35},\psi_{45}$. Thus here we can assign $\psi_{12}$ to $C_1$, $\psi_{23}, \psi_{24}$ to $C_2$ and $\psi_{35}, \psi_{45}$ to $C_3$. 
+		\begin{rem}
+		If we encounter any ambiguity in assigning potentials, i.e we can assign potentials to more than once clique-node, then we can arbitrarily assign it to any one.
+		\end{rem}
+	\end{enumerate}
+\end{exmp}
+\begin{thm}
+Every triangulated graph has a simplicial vertex.
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
+We now state the algorithm to find the maximal cliques in a triangulated graph \\
+\begin{algorithm}[H]\label{alg:cliques-chordal}
+	\DontPrintSemicolon
+	\textbf{Input:} Triangulated graph $G$, $n=$ number of vertices in $G$\;
+	\For{$i=1$ to $n$}{
+		$\pi_i \longleftarrow$ any simplicial vertiex in $G$\;
+		$C_i \longleftrightarrow \{\pi_i\} \cup \mathcal{N}(\pi_i)$\;
+		Remove $\pi_i$ from $G$\;
+	}
+	\Return{the maximal cliques from $C_1, \cdots, C_n$}
+	\caption{Finding maximal cliques in a chordal graph}
+\end{algorithm}
+\begin{thm}
+A clique tree that satisfies the running intersection property maximized the number of separator variables.
+\end{thm}
+\begin{proof}
+To be added.
+\end{proof}
+\begin{algorithm}[H]\label{alg:cliques-jt}
+	\DontPrintSemicolon
+	\textbf{Input:} Cliques $C_1, \cdots, C_k$\;
+	Form a complete weighted graph $H$ with cliques as nodes and edge weights = size of the intersection of the two cliques it connects \;
+	$T \longleftarrow$ maximum weight spanning tree of $H$\;
+	\Return{$T$ as the junction tree}
+	\caption{Forming a junction tree from a clique-node graph}
+\end{algorithm}

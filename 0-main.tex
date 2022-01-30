@@ -105,13 +105,15 @@
 \newcommand{\docpkg}[1]{\texttt{#1}}% package name
 \newcommand{\doccls}[1]{\texttt{#1}}% document class name
 \newcommand{\docclsopt}[1]{\texttt{#1}}% document class option name
-
+\renewcommand{\listalgorithmcfname}{List of Algorithms}
 \begin{document}
 	
 	\maketitle
 	\begin{abstract}
 		These are my lecture notes taken during the Advanced Machine Learning (CS 726) course at IIT Bombay during the Spring 2021 session.	\end{abstract}
 	\tableofcontents
+	\vspace{5mm}
+	\listofalgorithms
 	\newpage
 	\include{1-probabilistic-modeling}
 	\include{2-bayesian-networks}
