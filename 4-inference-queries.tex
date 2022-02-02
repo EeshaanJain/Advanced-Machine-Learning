@@ -545,7 +545,7 @@ Some heuristics of triangulation are
 	\item Choose the vertex with smallest degree and connect all its neighbors
 	\item Chose the vertex which will require the smallest number of edges to connect neighbors
 \end{enumerate}
-\begin{exmp}
+\begin{exmp}\label{exmp:jt-creation}
 	Creation of a JT from a UGM:
 	\begin{enumerate}
 		\begin{marginfigure}
@@ -607,7 +607,7 @@ Some heuristics of triangulation are
 		\begin{equation}
 		\text{Separator}(C_i, C_j) = C_i \cap C_j
 		\end{equation}
-	f
+	
 		\item Now we assign potentials to all cliques. Note that from Example \ref{exmp:var-elim}, we had potentials $\psi_{12}, \psi_{23}, \psi_{24}, \psi_{35},\psi_{45}$. Thus here we can assign $\psi_{12}$ to $C_1$, $\psi_{23}, \psi_{24}$ to $C_2$ and $\psi_{35}, \psi_{45}$ to $C_3$. 
 		\begin{rem}
 		If we encounter any ambiguity in assigning potentials, i.e we can assign potentials to more than once clique-node, then we can arbitrarily assign it to any one.
@@ -646,3 +646,249 @@ To be added.
 	\Return{$T$ as the junction tree}
 	\caption{Forming a junction tree from a clique-node graph}
 \end{algorithm}
+Note that once we have the clique graph, we can make a weighted clique graph from that by adding $|\mathcal S|$ as the weight for each each between $C_i$ and $C_j$ where $\mathcal S = C_i \cap C_j$, and the problem of finding the junction tree boils down to finding the maximum weight spanning tree of the weighted graph.
+\begin{exmp}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1)  {$x_1$}; 
+		\node[main] (2) [right of=1] {$x_2$};
+		\node[main] (3) [below of=1] {$x_3$};
+		\node[main] (4) [below of=2] {$x_4$};
+		\node[main] (5) [below right of=4] {$x_5$};
+		\node[main] (6) [right of=2] {$x_6$};
+		\draw[-] (1) -- (2);
+		\draw[-] (1) -- (3);
+		\draw[-] (1) -- (4);
+		\draw[-] (2) -- (4);
+		\draw[-] (2) -- (5);
+		\draw[-] (2) -- (6);
+		\draw[-] (3) -- (5);
+		\draw[-] (4) -- (5);
+		\draw[-] (5) -- (6);
+	\end{tikzpicture}
+	\caption{Undirected graph}
+	\label{fig:iq-jt-exmp-ugm}	
+\end{marginfigure}
+Consider the undirected graph $H$ in Figure \ref{fig:iq-jt-exmp-ugm}. Say the potentials are defined over cliques of size 2. \\
+To triangulate, say we pick a heuristic - smallest degree first. Start with $x_6$ and notice that its neighbors $x_2$ and $x_5$ are connected. Next we choose $x_3$ and connect $x_1$ and $x_5$. You can go on further, but notice that the graph is already triangulated (since on removing $x_1$ the graph becomes complete). Thus an ordering we can have is
+\[x_6, x_3, x_1, x_2, x_5, x_4\]
+Next we choose the maximal cliques. This can be done using Algorithm \ref{alg:cliques-chordal}. This gives the set of maximal cliques as
+\begin{align*}
+	C_1 &= \{x_3, x_1, x_5\}\\
+	C_2 &= \{x_6, x_2, x_5\}\\
+	C_3 &= \{x_1, x_2, x_4, x_5\}
+\end{align*}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}, node distance=2cm] 
+		\node[main] (1)  {$C_1$}; 
+		\node[main] (2) [below left of=1] {$C_2$};
+		\node[main] (3) [below right of=1] {$C_3$};
+		\draw[-] (1) to node[auto] {1} (2) ;
+		\draw[-] (1) to node[auto] {2} (3) ;
+		\draw[-] (2) to node[auto] {2} (3) ;
+	\end{tikzpicture} 	
+	\caption{Complete Weighted Graph}
+	\label{fig:iq-jt-exmp-cwg}	
+\end{marginfigure}
+We then make the complete weighted graph as in Figure \ref{fig:iq-jt-exmp-cwg}. Clearly by removing the edge $C_1 - C_2$, we get the maximum spanning tree, and that gives the junction tree as shown in Figure \ref{fig:iq-jt-exmp-jt}.
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}, sep/.style= {draw, rectangle}] 
+		\node[main] (135)  {$1,3,5$}; 
+		\node[sep] (5)  [below right of=135]{$1,5$}; 
+		\node[main] (1245) [below right of=5] {$1, 2,4,5$};
+		\node[sep] (25)  [left of=1245]{$2,5$}; 
+		\node[main] (625) [left of=25] {$6, 2, 5$};
+		\draw[-] (135) -- (5);
+		\draw[-] (5) -- (1245);
+		\draw[-] (625) -- (25);
+		\draw[-] (25) -- (1245);
+	\end{tikzpicture}
+	\caption{Junction Tree}
+	\label{fig:iq-jt-exmp-jt}	
+\end{marginfigure}
+To assign the potentials, we can assign $\psi_{13}, \psi_{35}$ to $C_1$, $\psi_{14}, \psi_{12}, \psi_{45}, \psi_{24}$ to $C_3$ and finally $\psi_{25}, \psi_{26}$ to $C_2$. The potential of a clique is the product of the potentials assigned to it.
+\end{exmp}
+\subsection{Message Passing}
+Say each node $c$, which is a clique in the JT, sends a message $m_{c\to c'}(\cdot)$ to its neighbors $c'$ once it has messages from every other neighbor $\mathcal{N}(c) - \{c'\}$.
+\begin{equation}
+m_{c\to c'}(\mathbf{x}_s) = \sum_{\mathbf{x}_{c-s}}\psi_c(\mathbf x_c) \prod_{d \in \mathcal{N}(c) - \{c'\}} m_{d\to c} (\mathbf{x}_{d\cap c})
+\end{equation}
+For a MAP query, we can replace the $\sum$ with $\max$. Note that the $\sum$ sums over all the variables present in clique but not in separator. \\
+We can write
+\begin{equation}
+	\Prob(\mathbf x_c) \propto \psi_c(\mathbf x_c) \prod_{d \in \mathcal{N}(c)} m_{d\to c}(\mathbf x_{d\cap c})
+\end{equation}
+And to get the marginal probability of any $x_i$, we can just sum over the rest, i.e
+\begin{equation}
+	\Prob(x_i) = \sum_{\mathbf x_c - x_i}\Prob(\mathbf x_c)
+\end{equation}
+\begin{exmp}
+	\begin{marginfigure}
+		\centering
+		\begin{tikzpicture}[main/.style = {draw, circle}, sep/.style= {draw, rectangle}, node distance=1.5cm] 
+			\node[main] (12)  {$y_1, y_2$};
+			\node[sep] (2)  [below of=12]{$y_2$}; 
+			\node[main] (234) [below of=2] {$y_2, y_3, y_4$};
+			\node[sep] (34)  [right of=234]{$y_3,y_4$}; 
+			\node[main] (345) [right of=34] {$y_3, y_4, y_5$};
+			\draw[-] (12) -- (2);
+			\draw[-] (2) -- (234);
+			\draw[-] (234) -- (34);
+			\draw[-] (34) -- (345);
+		\end{tikzpicture}
+		\caption{Junction Tree}
+		\label{fig:iq-mp-exmp-jt}	
+	\end{marginfigure}
+Consider the JT shown in Figure \ref{fig:iq-mp-exmp-jt}. Note that we have edge potentials, and each clique has the product of such potentials present. Each node can send a message once it has messages from neighbors. \\
+Initially, $C_1 = \{y_1, y_2\}$ or $C_3 = \{y_3, y_4, y_5\}$ can initiate the message passing since they have single neighbors. Thus, we have
+\begin{enumerate}
+	\item $C_1$ initiates message $m_{12\to234}(y_2) = \sum_{y_1} \psi_{12}(\mathbf y_{12})$ to $C_2 = \{y_2, y_3, y_4\}$.
+	\item $C_3$ sends message $m_{345\to234}(\mathbf y_{34}) = \sum_{y_5}\psi_{345}(\mathbf y_{345})$ to $C_2$
+	\item $C_2$ sends message $m_{234\to345} = \sum_{y_2} \psi_{234}(\mathbf y_{234})m_{12\to234}(y_2)$ to $C_3$
+	\item $C_2$ sends message $m_{234\to12}(y_2) = \sum_{\mathbf{y_{34}}} \psi_{234}(\mathbf y_{234})m_{345\to234}(\mathbf y_{34})$ to $C_1$
+\end{enumerate}
+We also write that $\Prob(y_1) \propto \sum_{y_2} m_{234\to12}(y_2)$.
+\end{exmp}
+\begin{rem}[Intuition behind message passing]
+Message from $c$ to $c'$ denotes the result of VE of potentials on the side of the tree that contains the clique $c$ but not $c'$ leaving only the separator variables $s = c\cap c'$.
+\end{rem}
+\subsection{Addition of Evidence}
+In such queries, we have an evidence or conditioning set $\mathbf x_e$, and we need to find similar types of sub-queries shown before, i.e
+\begin{enumerate}	\item $\Prob(x_1 | \mathbf{x}_e) = \sum_{x_2, \cdots, x_m} \Prob(x_1, \cdots, x_n| \mathbf{x}_e)$ \\
+\item $\mathbf{x}^* | \mathbf{x}_e= \argmax_{x_1, \cdots, x_m} \Prob(x_1, \cdots, x_n | \mathbf{x}_e)$
+\end{enumerate}
+where $\{x_2, \cdots, x_m\} = V - \mathbf{x}_e - \{x_1\}$. The trick to add evidence is to change the potentials.
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (y1)  {$y_1$}; 
+		\node[main] (y2) [right of=y1] {$y_2$};
+		\node[main] (y3) [right of=y2] {$y_3$};
+		\node[main] (y6) [right of=y3] {$y_6$};
+		\node[main] (y7) [right of=y6] {$y_7$};
+		\node[main] (x1) [below of=y1] {$x_1$};
+		\node[main] (x2) [below of=y2] {$x_2$};
+		\node[main] (x3) [below of=y3] {$x_3$};
+		\node[main] (x6) [below of=y6] {$x_6$};
+		\node[main] (x7) [below of=y7] {$x_7$};
+		\node at ($(y3)!.5!(y6)$) {\ldots};
+		\draw[->] (y1) -- (x1);
+		\draw[->] (y1) -- (y2);
+		\draw[->] (y2) -- (x2);
+		\draw[->] (y2) -- (y3);
+		\draw[->] (y3) -- (x3);
+		\draw[->] (y6) -- (x6);
+		\draw[->] (y6) -- (y7);
+		\draw[->] (y7) -- (x7);
+	\end{tikzpicture}
+	\caption{Sample HMM}
+	\label{fig:iq-xe-hmm}	
+\end{marginfigure}
+\begin{exmp}[Viterbi Algorithm]
+Consider the Hidden Markov Model shown in Figure \ref{fig:iq-xe-hmm}. Define edge potentials as $\Prob(y_i|y_{i-1})$ and $\Prob(x_i|y_i)$. Also, let the evidence variables be $\mathbf{x} = x_1, \cdots, x_n = o_1, \cdots, o_n$. We need to find the most likely values of the hidden state variables $\mathbf y = y_1, \cdots, y_n$, i.e
+\[\argmax_\mathbf{y} \Prob(\mathbf y | \mathbf x = \mathbf o)\]
+We redefine the potentials as
+\[\psi_i(y_{i-1}, y_i) = \Prob(y_i|y_{i-1})\Prob(x_i=o_i|y_i)\]
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (y1)  {$y_1$}; 
+		\node[main] (y2) [right of=y1] {$y_2$};
+		\node[main] (y3) [right of=y2] {$y_3$};
+		\node[main] (y6) [right of=y3] {$y_6$};
+		\node[main] (y7) [right of=y6] {$y_7$};
+		\node at ($(y3)!.5!(y6)$) {\ldots};
+		\draw[->] (y1) -- (y2);
+		\draw[->] (y2) -- (y3);
+		\draw[->] (y6) -- (y7);
+	\end{tikzpicture}
+	\caption{Sample HMM}
+	\label{fig:iq-xe-rcg}	
+\end{marginfigure}
+Since we have fixed the observations of $x_i = o_i$, we have a 1D table instead of a 2D potential table. This gives the reduced chain graph as in Figure \ref{fig:iq-xe-rcg}. Now we use the message passing algorithm shown earlier, just replacing sum with max. For ease of calculation, only consider a three node chain, with the following probabilities:
+\[\Prob(y_i = 0|y_{i-1}) = 
+\begin{cases}
+	0.9 &\text{if } y_{i-1} = 0 \\
+	0.2 &\text{if } y_{i-1} = 1
+\end{cases}
+\]
+\[\Prob(x_i = 0|y_{i}) = 
+\begin{cases}
+	0.7 &\text{if } y_{i} = 0 \\
+	0.6 &\text{if } y_{i} = 1
+\end{cases}
+\]
+Also, $\Prob(y_1 = 1) = 0.5$. Say our observations are
+\[[x_1, x_2, x_3] = [0, 0, 0]\]
+We want to calculate
+\[\argmax \Prob(y_1, y_2, y_3 | x_1, x_2, x_3 = [0,0,0])\]
+Now, we calculate the potential $$\psi_{12}(y_1, y_2)= \Prob(y_2|y_1)\Prob(x_1=0|y_1)\Prob(y_1)$$ 
+\begin{center}
+\begin{tabular}{cc|c|c|}
+	& \multicolumn{1}{c}{} & \multicolumn{2}{c}{$\psi_{12}(y_1, y_2 ) $}\\
+	& \multicolumn{1}{c}{} & \multicolumn{1}{c}{$0$}  & \multicolumn{1}{c}{$1$} \\\cline{3-4}
+	\multirow{2}*{}  & $0$ & $0.9 \times 0.7 \times 0.5$ & $	0.1 \times 0.7 \times 0.5$ \\\cline{3-4}
+	& $1$ & $0.2 \times 0.6 \times 0.5$ & $0.8\times 0.6 \times 0.5$ \\\cline{3-4}
+\end{tabular}
+\end{center}
+Note that when we calculate $$\psi_{23}(y_2, y_3) = \Prob(y_3|y_2)\Prob(x_2=0|y_2)\Prob(x_3=0|y_3)$$
+\end{exmp}
+\begin{rem}[Approximate Inference]
+Note the followings points:
+\begin{itemize}
+	\item[$\diamond$] Exact inference is NP hard. First define the tree width $w$ of a triangulated graph as one less than the size of the maximal clique. The complexity of exact inference is $\mathcal{O}(m^w)$.
+	\item[$\diamond$] It is seen that real-life graphs produce large cliques on triangulation. For example, an $n\times n$ grid has a tree width of $n$. A Kalman filter on $K$ parallel state variables influencing a common observation variable has a tree width of size $K+1$.
+\end{itemize}
+\end{rem}
+\subsection{Generalized Belief Propogation}
+Here, we tr to run some kind of message passing algorithms on graphs which look like junction trees. Instead of creating an exact JT which satisfies the running intersection property, we try to create a cluster graph with two relaxations - 
+\begin{enumerate}
+	\item The nodes are arbitrary clusters instead of cliques in the chordal graph. We only ensure that all potentials are subsumed.
+	\item Instead of adding separator nodes, we add a subset of intersecting variables so as to satisfy the running intersection property.
+\end{enumerate}
+\begin{exmp}
+Consider the JT creation in Example \ref{exmp:jt-creation}. For that graph, we see that we get maximal clique size of 3. Suppose we want to maintain a clique size of 2. 
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}, sep/.style={draw, rectangle}, node distance=1.05cm] 
+		\node[main] (12)  {$x_1, x_2$}; 
+		\node[sep] (2) [above right of=12] {$x_2$};
+		\node[main] (23) [below right of=2] {$x_2, x_3$}; 
+		\node[sep] (3) [above right of=23] {$x_3$};
+		\node[main] (24) [below right of=3] {$x_2, x_4$}; 
+		\node[sep] (4) [above right of=24] {$x_4$};
+		\node[main] (35) [below right of=4] {$x_3, x_5$}; 
+		\node[sep] (5) [above right of=35] {$x_5$};
+		\node[main] (45) [below right of=5] {$x_4, x_5$}; 
+		\draw[-] (12) -- (2);
+		\draw[-] (23) -- (2);
+		\draw[-] (23) -- (3);
+		\draw[-] (35) -- (3);
+		\draw[-] (24) -- (4);
+		\draw[-] (45) -- (4);
+		\draw[-] (35) -- (5);
+		\draw[-] (45) -- (5);
+		\end{tikzpicture}
+	\caption{Factor Graph}
+	\label{fig:iq-gbf-fg}	
+\end{marginfigure}
+We create a \textit{factor graph} such that the nodes of the factor graph correspond to the edge potentials given. The cluster/factor graph will be as shown in Figure \ref{fig:iq-gbf-fg}. Note that factor graphs are special kinds of cluster graphs.
+\end{exmp}
+Belief propogation algorithms are approximate message passing algorithms, and differ in the order of sending of messages. Note that in general graph can have loops and thus we can't apply tree-based two phase methods. \\
+\noindent Variants of scheduling order of propogating beliefs are - 
+\begin{enumerate}
+	\item Simple loopy belief propogation
+	\item Tree-reweighted message passing
+	\item Residual belief propogation
+\end{enumerate}
+There are other classes too, which are
+\begin{enumerate}
+	\item Sampling
+	\item Combinatorial Algorithms
+	\item Greedy algorithms: relaxation labeling
+	\item Variatinal methods - mean-field \& structured mean-field
+	\item Linear and Quadratic Programming based approaches
+\end{enumerate}
