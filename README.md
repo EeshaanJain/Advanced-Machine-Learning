@@ -8,4 +8,4 @@ Summary of what has been done, and what will be done:
 1. Probabilistic Modeling - Small overview of probability, graphical models and conditional independence, along with their significance.
 2. Bayesian Networks - Directed Graphical Models for representation of joint distributions, d-separability.
 3. Markov Random Fields - Undirected Graphical Models, conditional independencies, drawbacks, conversion to and from Bayesian Networks.
-4. Inference Queries - Types of inference queries, NP-hardness, 3-SAT, Variable Elimination, Junction Trees, [to be continued].
+4. Inference Queries - Types of inference queries, NP-hardness, 3-SAT, Variable Elimination, Junction Trees, Message Passing, Inference with evidence, Exact and Approximate inference, Belief Propogation [to be continued]
