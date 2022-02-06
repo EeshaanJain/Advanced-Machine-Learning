@@ -1,0 +1,93 @@
+\section{Learning from Data}
+Each graphical model consists of two major components - the graph structure, and the potentials given the graph structure. 
+\subsection{Graph Structure}
+There are two major methods to learn the graph:
+\begin{enumerate}
+	\item \textbf{Manual:} A domain expert manually designs the graphs. This is popular in applications where we are well-versed with the underlying dependency structure. For example - Quick Medical Reference (QMR) systems for disease-symptoms matching, Kalman Filters, Grid graphs in Computer Vision, Hidden Markov Models (HMM) in speech recognition/information extraction.
+	\item \textbf{Learning from Examples:} It can be shown that recovering the graph structure is NP hard. Usually learning methods are branch and bound search problems, which are particularly useful in dynamic situations.
+\end{enumerate}
+\subsection{Parameters in Potentials}
+As before, there are the two same methods for learning:
+\begin{enumerate}
+	\item \textbf{Manual:} Done by a domain expert usually for infrequently constructured graphs (QMR systems), or where the potentials are a trivial function of the attributes of the connected graphs (grid graphs). This is a relevant method for Bayesian Networks, as potentials correspond to conditional probabilities. Thus in data-starved regions, with priors we can use Bayesian Networks.
+	\item \textbf{Learning from Examples:} A popular method where humans cannot make objective assignments. Two major subdomains are table potentials, where each entry is a parameter (HMMs), and potentials with shared parameters and data attributed (CRFs).
+\end{enumerate}
+Given a sample of data $\mathcal D$ generated from a distribution $P$, being represented by a known graphical model $G$, our aim is to learn the potentials. There can be many scenarios to consider -
+\begin{enumerate}
+	\item \textbf{Variables:}
+	\begin{enumerate}
+		\item In each training instance, we have observed all the variables $\mathcal{X}$. Such a setting is called fully supervised setting.
+		\item In each training instance, we have observed a subset of variables $\mathfrak{X} \subset \mathcal{X}$. Such a setting is called partially observed setting.
+	\end{enumerate}
+	\item \textbf{Potentials:}
+	\item In BNs, we don't have a log-partition function $\log Z$, and thus in most cases, we'd be able to find closed form solutions for potentials.
+	\item In UGMs, $\log Z$ causes a lot of trouble. Since potentials are attached to arbitrary overlapping subset of variables, we require gradient descent kind of iterative algorithms.
+\end{enumerate}
+Representation of potentials as parameters includes - 
+\begin{enumerate}
+	\item \textbf{Generative:} 
+	$P(\mathbf x) = P(x_1, \cdots, x_n)$ is represented as our $G$. The training samples are $\mathcal{D} = \{\mathbf{x}^1, \cdots, \mathbf{x}^N\}$ where
+	$\mathbf{x}^i = \{x_1^i, x_2^i, \cdots, x_n^i\}$, and we finally learn the potentials $\psi_C(\mathbf x_C)$.
+	\item \textbf{Conditional:}
+	We work with $P(\mathbf{y|x}) = P(y_1, \cdots, y_n|\mathbf x)$ represented by our $G$ over $\mathbf{y}$ variables. Our training instances in this case would be 2-tuples $\mathcal{D} = \{(\mathbf{x}^1, \mathbf{y}^1), \cdots, (\mathbf{x}^N), \mathbf{y}^N\}$ and we learn the potentials $\psi_C(\mathbf{y}_C, \mathbf x)$.
+\end{enumerate}
+\subsection{Learning under Conditional Representation}
+We now focus on the conditional representation of potentials, and provide a general framework for parameter learning. \\
+Consider the conditional distribution $\Prob(\mathbf y|\mathbf x, \theta)$, potentials are function of $\mathbf{x}$, and we want to learn $\theta$. Say $\mathbf y = y_1, \cdots, y_n$ forms a graphical model $G$. \\
+Say $G$ is undirected, then
+\begin{equation}
+\begin{split}
+	\Prob(y_1, \cdots, y_n | \mathbf x, \theta) &= \dfrac{\prod_C \psi_C(\mathbf y_C, \mathbf x, \theta)}{Z_\theta(\mathbf x)} \\&= \dfrac{1}{Z_\theta(\mathbf x)}\exp\bigg(\sum_C F_\theta(\mathbf y_C, C, \mathbf x)\bigg)
+\end{split}
+\end{equation} 
+where $F_\theta(\mathbf y_C, C, \mathbf x) = \log \psi_C (\mathbf y_C, \mathbf x, \theta)$, $Z_\theta(\mathbf x) = \sum_{\mathbf y'} \exp\bigg(\sum_C F_\theta(\mathbf y'_C, C, \mathbf x)\bigg)$. \\
+Now, we can think of $F_\theta(\mathbf y_C, C, \mathbf x)$ in many ways
+\begin{enumerate}
+	\item \textbf{Log-linear model} over features defined by the user (eg. in CRFs, Maxent models). Say we gave $K$ features, and each feature is represented as $f_k(\mathbf y_C, C, \mathbf x)$. Thus, 
+	\begin{equation}
+		F_\theta(\mathbf y_C, C, \mathbf x) = \sum_{k=1}^K \theta_k f_k(\mathbf y_C, C, \mathbf x) 
+	\end{equation}
+   \item \textbf{Neural Network} which takes in $\mathbf y_C, C, \mathbf x$ and transforms them non-linearly into $\mathcal{Y} \in \R$, and $\theta$ are the parameters of the neural network.
+\end{enumerate}
+\begin{exmp}[Named Entity Recognition]
+Consider the task of NER, where $y_i$ can take 3 values, and the structure is represented as a chain graph. Thus essentially, the user enforces that only adjacent words in the sentence affect the labels taken. Since we have a chain graph, we take the cliques as edges, and we take our templatized functions as $\mathbf{f}(y_i, y_{i-1}, i, \mathbf{x})$, where $C=i$ is a short hand for $C = (i-1, i)$. Defining the features $f_i(y_i, y_{i-1}, i, \mathbf{x})$. We can manually write heuristics, or in something like BERT, we can have $\mathbf{f}(y_i, y_{i-1}, i, \mathbf x) = \mathbf e_i \in \R^K$ where $e_i$ is the embedding generated by BERT.
+\end{exmp}
+Now, for training, we have been given $N$ input pairs represented by $\mathcal{D} = \{(\mathbf x^1, \mathbf y^1), \cdots, (\mathbf x^N, \mathbf y^N)\}$, and the form of $F_\theta$. We learn $\theta$ through maximum likelihood, i.e
+\begin{equation}
+	\begin{split}
+	\max_{\theta} LL(\theta, \mathcal D) &= \max_\theta \sum_{i=1}^N \log\Prob(\mathbf{y}^i|\mathbf{x}^i, \theta)
+	\end{split}
+\end{equation}
+We can write
+\begin{equation}
+\begin{split}
+	LL(\theta, \mathcal{D}) &= \sum_{i=1}^N \log\Prob(\mathbf{y}^i|\mathbf{x}^i, \theta) \\
+	&= \sum_{i=1}^N \log\bigg(\dfrac{1}{Z_\theta(\mathbf x^i)} \exp\Big(\sum_C F_\theta(\mathbf y^i_C, C, \mathbf x^i)\Big)\bigg) \\
+	&= \sum_{i=1}^N \Bigg[\sum_C F_\theta(\mathbf y^i_C, C, \mathbf x^i) - \log Z_\theta(\mathbf x^i) \Bigg]
+\end{split}
+\end{equation}
+Note that computing $F_\theta$ is not difficult, but to calculate $Z_\theta$ for each $i$ requires invoking an inference algorithm. \\
+For training, we can use gradient descent. For now, let us assume a log-linear model as $F_\theta(\mathbf y_C^i, C, \mathbf x) = \theta\cdot \mathbf f(\mathbf x^i, \mathbf y^i_C, C)$, and denote $\mathbf f(\mathbf x^i, \mathbf y^i) = \sum_C\mathbf f(\mathbf x^i, \mathbf y^i_C, C)$. Thus,
+\begin{equation}
+LL(\theta) = \sum_{i} \Big(\theta\cdot\mathbf f(\mathbf x^i, \mathbf y^i) - \log Z_\theta(\mathbf x^i) \Big)
+\end{equation}
+We can add a regularizer to prevent over-fitting. Thus, our objective becomes
+\begin{equation}
+	\max_{\theta} \sum_i \Big(\theta\cdot\mathbf f(\mathbf x^i, \mathbf y^i) - \log Z_\theta(\mathbf x^i) \Big) - \dfrac{\|\theta\|^2}{C}
+\end{equation}
+The objective function is concave in $\theta$, and thus we can reach the globally optimal value of $\theta$ using gradient descent. The gradient of the objective $L(\theta)$ is 
+\begin{equation}
+\begin{split}
+	\nabla L(\theta) &=  \sum_i \bigg(\theta\cdot\mathbf f(\mathbf x^i, \mathbf y^i) - \dfrac{\sum_{\mathbf y'} \mathbf f(\mathbf y', \mathbf x^i) \exp(\theta \cdot \mathbf f(\mathbf x^i, \mathbf y^i))}{Z_\theta(\mathbf x^i)}\bigg) - \dfrac{2\theta}{C} \\
+	&= \sum_i \Big(\theta\cdot\mathbf f(\mathbf x^i, \mathbf y^i) - \sum_{\mathbf y'} \mathbf f(\mathbf x^i, \mathbf y^i)\Prob(\mathbf y'|\theta, \mathbf x^i)\Big) - \dfrac{2\theta}{C} \\
+	&= \sum_i \bigg(\theta\cdot\mathbf f(\mathbf x^i, \mathbf y^i) - \mathbb{E}_{\Prob(\mathbf y'| \theta, \mathbf x')} \mathbf f(\mathbf x^i, \mathbf y^i)\Big) - \dfrac{2\theta}{C}
+\end{split} 
+\end{equation}
+where 
+\begin{equation}
+\begin{split}
+	\mathbb{E}_{\Prob(\mathbf y'| \theta, \mathbf x')} f_k(\mathbf x^i, \mathbf y') &= \sum_{\mathbf y'}  f_k(\mathbf x^i, \mathbf y')\Prob(\mathbf y'|\theta, \mathbf x^i) \\
+	&= \sum_{\mathbf y'} \sum_C f_k(\mathbf x^i, \mathbf y'_C, C)\Prob(\mathbf y'|\theta, \mathbf x^i) \\
+	&= \sum_C \sum_{\mathbf y_C'} f_k (\mathbf x^i, \mathbf y_C', C)\Prob(\mathbf y_C'|\theta, \mathbf x^i)
+\end{split}
+\end{equation}
