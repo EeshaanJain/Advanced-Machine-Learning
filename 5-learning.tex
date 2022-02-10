@@ -91,3 +91,199 @@ where
 	&= \sum_C \sum_{\mathbf y_C'} f_k (\mathbf x^i, \mathbf y_C', C)\Prob(\mathbf y_C'|\theta, \mathbf x^i)
 \end{split}
 \end{equation}
+\begin{exmp}\label{exmp:i-1}
+Consider an undirected graphical model on 3 binary variables $\{y_1, y_2, y_3\}$ represented as $\mathbf y$, and are forming a chain. We define two features for the model as
+\[
+\begin{split}
+	f_1(\mathbf x, y_j, j) &= x_jy_j \qquad \text{where $x_j$ is the intensity of pixel $j$} \\
+	f_2(\mathbf x, (y_k, y_j), (k,j)) &= [\![ y_k \neq y_j ]\!] \qquad \text{where $[\![\alpha]\!] = 1$ if $\alpha=$true}
+\end{split}
+\]
+Consider the initial parameters as $\theta = [\theta_1, \theta_2] = [3,-2]$, and consider $\mathbf x^1 = [0.1, 0.7, 0.3]$ and $\mathbf y^1 = [1, 1, 0]$. \\
+\begin{itemize}
+	\item[$\diamond$] The log-node potentials $F_\theta(y_j, C=j, \mathbf x)$ are given as $$y_j = \theta \cdot \mathbf f(\mathbf x, y_j, j) = \theta_1 x_j y_j$$
+	For $y_1$, we have the value as $[0, 0.3]$, $y_2$ will have the value $[0, 2.1]$ and $y_3$ will have $[0, 0.09]$.
+	\item[$\diamond$] The log-edge potentials $F_\theta((y_1, y_2), C=(1,2), \mathbf x)$ are given as
+	\[\theta_2f_2(\mathbf x, (y_1, y_2), (1,2))\]
+	For $(1,2)$ we have the value as $[0, -2, 0, -2]$ corresponding to $y_1y_2 = \{00, 01, 10, 11\}$ (can consider it to be a matrix for ease of understanding). Since our edge potentials don't depend on $x$, $F_\theta((y_2,y_3), C=(2,3), \mathbf x) = [0, -2, 0, -2]$. 
+\end{itemize}
+\end{exmp}
+\begin{exmp}
+Consider parameter learning for $\mathbf y = \{y_1, \cdots, y_6\}$, where $y_j = \pm 1$. Let us define 8 features for the variables as
+\begin{align*}
+f_1 (y_j, y_{j+1}) &= [\![ y_j + y_{j+1} > 1 ]\!], \quad 1 \leq j \leq 5 \\
+f_2(y_1, y_3) &= -2y_1y_3 \\
+f_3(y_2, y_3) &= y_2y_3 \\
+f_4(y_3, y_4) &= y_3y_4 \\
+f_5(y_2, y_4) &= [\![y_2y_4<0]\!] \\
+f_6(y_4, y_5) &= 2y_4y_5 \\
+f_7(y_3,y_5) &= -y_3y_5 \\
+f_8(y_5,y_6) &= [\![y_5+y_6>0]\!] 
+\end{align*}
+Consider 
+\[\mathbf{f(y)} = [f_1, \cdots, f_8] \text{ and } \theta=[1\; 1\; 1 \;2 \;2 \;1 \;-1 \;1]^\top\]
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1) {$y_1$}; 
+		\node[main] (2) [above right of=1] {$y_2$}; 
+		\node[main] (3) [below right of=1] {$y_3$}; 
+		\node[main] (4) [right of=2] {$y_4$}; 
+		\node[main] (5) [right of=3] {$y_5$}; 
+		\node[main] (6) [below right of=4] {$y_6$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (1) -- (3);
+		\draw[-] (2) -- (3);
+		\draw[-] (2) -- (4);
+		\draw[-] (3) -- (4);
+		\draw[-] (3) -- (5);
+		\draw[-] (4) -- (5);
+		\draw[-] (5) -- (6);
+	\end{tikzpicture}
+	\caption{UGM for example}
+	\label{fig:l-exmp-6}		
+\end{marginfigure}
+The underlying graphical model is given in Figure \ref{fig:l-exmp-6}
+For the above graph, we can draw the junction tree to find 
+\[Z = \sum_{\mathbf y} \exp\Big(\theta^\top \mathbf{f(x,y)}\Big)\]
+For clique $C$, we have $\psi_C(\mathbf y_C) = \exp\Big(\theta \cdot \mathbf{f}_C(\mathbf x,\mathbf y_C)\Big)$. 
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}, node distance=1.8cm] 
+		\node[main] (123)  {$y_1,y_2,y_3$}; 
+		\node[main] (234) [above right of=123]{$y_2, y_3,y_4$}; 
+		\node[main] (345) [below right of=234]{$ y_3,y_4,y_5$}; 
+		\node[main] (56) [above right of=345] {$y_5, y_6$}; 
+		\draw[-] (123) -- (234);
+		\draw[-] (234) -- (345);
+		\draw[-] (345) -- (56);
+	\end{tikzpicture}
+	\caption{JT for above UGM}
+	\label{fig:l-exmp-6-jt}		
+\end{marginfigure}
+The junction tree for the above graph is given in Figure \ref{fig:l-exmp-6-jt}. Say from left to right in the JT, we call the cliques $\mathscr C_1$ to $\mathscr C_4$. For $\mathscr C_2$, the log-potential will be $2 \cdot f_5(y_2, y_4) + 1 \cdot f_1(y_3, y_4) + 2\cdot f_4(y_3, y_4)$. We can easily find for others too.
+\end{exmp}
+Now, coming back to the expectation, we need to compute \\ $\mathbb{E}_{\Prob(\mathbf y|\theta^\top, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y)$. To do this, we can proceed as follows:
+\begin{enumerate}
+	\item Represent the probability $\Prob(\mathbf y|\theta^\top, \mathbf x^i)$ as UGM where nodes are $y_1, \cdots y_n$ and the potential $\psi_C(\mathbf y_C, \mathbf x, \theta)$ for clique $C$ is $\exp\big(\theta^\top \cdot \mathbf f(\mathbf x^i, \mathbf y_C^i, C)\big)$.
+	\item Run a sum-product inference algorithm on the above UGM and compute for each $C$, $\mathbf y_C$ the marginal probability $\mu(\mathbf y_C, C, \mathbf x^i)$.
+	\item Using these nodes, compute 
+	\[\mathbb{E}_{\Prob(\mathbf y|\theta^\top, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y) = \sum_C\sum_\mathbf{y_C} \mu(\mathbf y_C, C, \mathbf x^i)f_k(\mathbf x^i, C, \mathbf y_C)\]
+\end{enumerate}
+Having done this, we continue Example \ref{exmp:i-1}. We can calculate marginals $\mu(y_j, j)$ and $\mu(y_k, y_j, (k,j))$, and write
+\begin{align*}
+\mathbb{E}[f_1(\mathbf x^1, \mathbf y)] &= \sum_j \sum_{y_j'} \mu_j(y_j', j)x_jy_j' =\sum_j y_jx_j \mu_j(1,j) \\&= 0.1\mu(1,1) + 0.7 \mu(1,2) + 0.3\mu(1,3) \\
+\mathbb{E}[f_2(\mathbf x^2, \mathbf y)] &= \sum_C \sum_{y_C'} \mu_j(y_C', C)f_2(y_C', C, x)\\&= \mu(1,0,(1,2)) + \mu(0,1, (1,2)) + \mu(1,0,(2,3)) + \mu(0,1, (2,3))
+\end{align*}
+Now, value of 
+\begin{align*}
+f_1(\mathbf x^1, \mathbf y^1) &= \sum_C f_1(\mathbf x^1, \mathbf y^1_C, C) = \sum_{j=1}^3 f_1(\mathbf x^1, y^1_j, j) = \sum_{j=1}^3 x_jy_j\\
+&= 0.1 \times 1 + 0.7 \times 1 + 0.3 \times 0 = 0.8 \\
+f_2(\mathbf x^1, \mathbf y^1) &= [\![y_1^1 \neq y_2^1]\!] + [\![y_2^1 \neq y_3^1]\!] = 1
+\end{align*}
+Thus we can write the gradients for each parameter as
+\begin{align*}
+\nabla L(\theta_1) &= 0.8 - \mathbb{E}(f_1(\mathbf x^1, \mathbf y)) - 2\cdot\dfrac{3}{C} \\
+\nabla L(\theta_2)&=  1 - \mathbb{E}(f_2(\mathbf x^1, \mathbf y)) + 2\cdot\dfrac{2}{C} 
+\end{align*}
+\subsection{Training Algorithm}
+\begin{algorithm}[H]\label{alg:l-train}
+	\DontPrintSemicolon
+	\textbf{Input:} $\mathcal{D} = \{(\mathbf x^i, \mathbf y^i)\}_{i=1}^N$, $\mathbf f: f_1, \cdots, f_K$\;
+	\textbf{Output:} $\theta = \argmax \sum_{i=1}^N (\theta \cdot \mathbf f(\mathbf x^i, \mathbf y^i) - \log Z_\theta (\mathbf x^i)) - \frac{\|\theta\|^2}{C}$\;
+	\textbf{Initialize:} $\theta^0 = \mathbf 0$\;
+	\For{$t=1$ to $T$}{
+		\For{$i=1$ to $N$}{
+			$g_{k,i} = f_k(\mathbf x^i, \mathbf y^i) - \mathbb{E}_{\Prob(\mathbf y'|\theta^\top, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y')$ for $k=1,\cdots,K$\;
+		}
+	$g_k = \sum_i g_{k,i}$ for $k=1, \cdots, K$\;
+	$\theta_k^t = \theta_k^{t-1} + \gamma_t(g_k - 2\frac{\theta_k^{t-1}}{C})$\;
+	\textbf{Exit:} if $\|\mathbf g\| \approx 0$\;
+	}
+	\caption{Training Algorithm for Parameter Learning}
+\end{algorithm}
+The running time for Algorithm \ref{alg:l-train} in case of chain graph is $\mathcal{O}(INn(m^2+K))$ where $I$ is the total number of iterations. But in general, for a graph with tree-width of $w$, the running time has $m^{w+1}$ instead of $m^2$. \\
+The above algorithm is a generalized framework, and we can see its use in Bayesian Networks now.
+\subsection{Local Conditional Probability for Bayesian Networks} 
+\noindent For a Bayesian Network
+\begin{equation}
+	\begin{split}
+	\Prob(y_1, \cdots, y_n|\mathbf x, \theta) &= \prod_j \Prob(y_j|\mathbf y_{\text{Pa}(j)}, \mathbf x, \theta) \\
+	&= \prod_j \dfrac{\exp\big(F_\theta(\mathbf{y}_{\text{Pa}(j)}, y_j, j, \mathbf x)\big)}{\sum_{y'_j=1}^m \exp\big(F_\theta(\mathbf{y}_{\text{Pa}(j)}, y'_j, j, \mathbf x\big)}
+	\end{split}
+\end{equation}
+The potentials above are locally normalized. Now, we can write the likelihood as
+\begin{equation}
+	\begin{split}
+LL(\theta, \mathcal D) &= \sum_{i=1}^N \log \Prob(\mathbf y^i|\mathbf x^i, \theta) \\
+&= \sum_{i=1}^N \log\bigg(\prod_j \Prob(y^i_j|\mathbf y^i_{\text{Pa}(j)}, \mathbf x^i, \theta)\bigg) \\
+&=\sum_{i}\sum_j \log \Prob(y^i_j|\mathbf y^i_{\text{Pa}(j)}, \mathbf x^i, \theta) \\
+&= \sum_i\sum_j F_\theta(\mathbf{y}^i_{\text{Pa}(j)}, y^i_j, j, \mathbf x^i) - \log\sum_{y'=1}^m \exp\big(F_\theta(\mathbf{y}^i_{\text{Pa}(j)}, y'_j, j, \mathbf x^i\big)
+	\end{split}
+\end{equation}
+We can notice that we are essentially doing a softmax over $F_\theta(\cdot)$, and thus we are doing a normal classification task.
+\subsection{Table Potentials in Feature Framework}
+Consider a generative model (i.e $\mathbf x^i$ does not exist) - such as an Hidden Markov Model. 
+\begin{itemize}
+	\item[$\diamond$] $F_{\theta}(\mathbf y_{\text{Pa}(j)}^i, y_j^i, j) = \log P(y_j^i, \mathbf y_{\text{Pa}(j)}^i)$, and the normalizer vanishes.
+	\item[$\diamond$] $\Prob(y_j|\mathbf y_{\text{Pa}(j)})$ is a table of real values denoting the probability of each value of $x_j$ corresponding to each combination of values of the parents ($\theta^j$).
+	\item If each variable takes $m$ values, and has $k$ parents, then each $\Prob(y_j|\mathbf y_{\text{Pa}(j)})$ will require $m^{k+1}$ parameters in $\theta^j$.
+	\begin{equation}
+	\theta^j_{vu_1, \cdots, u_k} = \Prob(y_j = v|\mathbf{y}_{\text{Pa}(j)} = [u_1, \cdots, u_k])
+	\end{equation}
+\end{itemize}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (y1)  {$y_1$}; 
+		\node[main] (y2) [right of=y1] {$y_2$};
+		\node[main] (y3) [right of=y2] {$y_3$};
+		\node[main] (x1) [below of=y1] {$x_1$};
+		\node[main] (x2) [below of=y2] {$x_2$};
+		\node[main] (x3) [below of=y3] {$x_3$};
+		\draw[->] (y1) -- (x1);
+		\draw[->] (y1) -- (y2);
+		\draw[->] (y2) -- (x2);
+		\draw[->] (y2) -- (y3);
+		\draw[->] (y3) -- (x3);
+	\end{tikzpicture}
+	\caption{Sample HMM}
+	\label{fig:l-exmp-2}	
+\end{marginfigure}
+\begin{exmp}[HMM Parameter Learning]
+Consider the HMM shown in Figure \ref{fig:l-exmp-2}. Say $y_j \in \{1,2,3\}$ and $x_j \in \{A,B,C,D\}$.
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		$(y_1, x_1)$ & $(y_2, x_2)$ & $(y_3, x_3)$ & $(y_4,x_4)$ \\ \hline
+		1, A         & 1, B         & 2, A         & 3, C        \\ \hline
+		2, B         & 1, A         & 3, A         & 3, D        \\ \hline
+		1, B         & 1, B         & 2, C         & 3, D        \\ \hline
+	\end{tabular}
+	\caption{}
+	\label{tab:l-exmp-2}
+\end{table}
+The above table contains the values for $\mathcal {D} = (N=3, n=4)$. We need to calculate the probability of variable given its parent. Since $y_1$ has no parent, we can write
+\begin{equation*}
+	P(y_1) = 
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		1             & 2             & 3 \\ \hline
+		$\frac{2}{3}$ & $\frac{1}{3}$ & 0 \\ \hline
+	\end{tabular}
+\end{equation*}
+The values from left to right denote $\theta_1^1, \theta_2^1, \theta_3^1$. For $y_2$ we need to find $\theta^2_{v:u} = P(y_2=v|y_1=u)$ and this will have 9 values.
+\begin{equation*}
+	\centering
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		& $y=1$         & $y=2$         & $y=3$         \\ \hline
+		1 & $\frac{2}{5}$ & $\frac{2}{5}$ & $\frac{1}{5}$ \\ \hline
+		2 & $\frac{1}{3}$ & 0             & $\frac{2}{3}$ \\ \hline
+		3 & 0             & 0             & 1             \\ \hline
+	\end{tabular}
+\end{equation*}
+Now, to find $\theta^{x_1}_{u:v} = P(x_1=u, y_1=v)$, we will have 12 values.
+\end{exmp}
