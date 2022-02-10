@@ -105,7 +105,7 @@ Consider the initial parameters as $\theta = [\theta_1, \theta_2] = [3,-2]$, and
 	For $y_1$, we have the value as $[0, 0.3]$, $y_2$ will have the value $[0, 2.1]$ and $y_3$ will have $[0, 0.09]$.
 	\item[$\diamond$] The log-edge potentials $F_\theta((y_1, y_2), C=(1,2), \mathbf x)$ are given as
 	\[\theta_2f_2(\mathbf x, (y_1, y_2), (1,2))\]
-	For $(1,2)$ we have the value as $[0, -2, 0, -2]$ corresponding to $y_1y_2 = \{00, 01, 10, 11\}$ (can consider it to be a matrix for ease of understanding). Since our edge potentials don't depend on $x$, $F_\theta((y_2,y_3), C=(2,3), \mathbf x) = [0, -2, 0, -2]$. 
+	For $(1,2)$ we have the value as $[0, -2, 0, -2]$ corresponding to $y_1y_2 = \{00, 01, 10, 11\}$ (can consider it to be a matrix for ease of understanding). Since our edge potentials don't depend on $x$, $F_\theta((y_2,y_3), C=(2,3), \mathbf x) = [0, -2, -2, 0]$. 
 \end{itemize}
 \end{exmp}
 \begin{exmp}
@@ -285,5 +285,5 @@ The values from left to right denote $\theta_1^1, \theta_2^1, \theta_3^1$. For $
 		3 & 0             & 0             & 1             \\ \hline
 	\end{tabular}
 \end{equation*}
-Now, to find $\theta^{x_1}_{u:v} = P(x_1=u, y_1=v)$, we will have 12 values.
+Now, to find $\theta^{x_1}_{u:v} = P(x_1=u, y_1=v)$, we will have 12 values. 
 \end{exmp}
