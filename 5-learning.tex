@@ -274,8 +274,9 @@ The above table contains the values for $\mathcal {D} = (N=3, n=4)$. We need to 
 		$\frac{2}{3}$ & $\frac{1}{3}$ & 0 \\ \hline
 	\end{tabular}
 \end{equation*}
-The values from left to right denote $\theta_1^1, \theta_2^1, \theta_3^1$. For $y_2$ we need to find $\theta^2_{v:u} = P(y_2=v|y_1=u)$ and this will have 9 values.
+The values from left to right denote $\theta_1^1, \theta_2^1, \theta_3^1$. For $y_2$ we need to find $\theta^2_{v:u} = P(y_2=v|y_1=u)$ and this will have 9 values. 
 \begin{equation*}
+	P(y|y') = 
 	\centering
 	\begin{tabular}{|c|c|c|c|}
 		\hline
@@ -287,3 +288,96 @@ The values from left to right denote $\theta_1^1, \theta_2^1, \theta_3^1$. For $
 \end{equation*}
 Now, to find $\theta^{x_1}_{u:v} = P(x_1=u, y_1=v)$, we will have 12 values. 
 \end{exmp}
+For the above, we can notice that
+\begin{align*}
+	LL(\theta, \mathcal D) &= \max_\theta \sum_i \sum_j \log P(y_j^i|\mathbf{y}^j_{\text{Pa}(j)}) \\
+	&= \max_\theta \sum_i \sum_j \log \theta^j_{y_j\mathbf{y}_{\text{Pa}(j)}} \quad \text{s.t } \sum_v \theta^J_{vu_1, \cdots, u_k} = 1 \; \forall \; j, u_1, \cdots, u_k \\
+	&= \max_\theta \sum_i \sum_j \log \theta^j_{y_j\mathbf{y}_{\text{Pa}(j)}} - \sum_j \sum_{u_1, \cdots, u_k} \lambda^j_{u_1, \cdots, u_k} \bigg(\sum_v \theta^j_{vu_1, \cdots, u_k} - 1 \bigg)
+\end{align*}
+Using gradient descent, we can get that
+\begin{equation}
+	\theta^j_{vu_1, \cdots, u_k} = \dfrac{\sum_{i=1}^N [\![y_j^i = v, \mathbf{y}_{\text{Pa}(j)} = u_1, \cdots, u_k]\!]}{\sum_{i=1}^N[\![\mathbf{y}_{\text{Pa}(j)} = u_1, \cdots, u_k]\!] }
+\end{equation}
+Going back to the previous example, we can write for $P(y_1)$, the variables 
+\[\theta_1^1 = \dfrac{\sum_{i=1}^3 [\![y_1^i=1]\!]}{\sum_{i=1}^3 [\![1]\!]} = \dfrac{2}{3}\] 
+Now for the second table, look at the first entry $2/5$. We find all those values, where the next variable is $1$, given the  previous variable is $1$. This occurs two times, and $1$ occurs 5 times, giving the value 2/5. Note that this has occurred due to parameter sharing, i.e $\theta^{y_2}_{v:u} = \theta^{y_3}_{v:u} = \theta^{y_4}_{v:u}$. This allows us to use variable length sentences. 
+\subsection{Neural Translation Models}
+Say $X$ is a sentence in English having $m$ tokens, an $Y$ is a sentence in Hindi having $n$ tokens. We want to create $P(Y|X)$. Say our Hindi dictionary has size $30000$, then the number of sentences of length $n$ you can create is $(30000)^n$. A simpler method would be 
+\begin{equation}
+	P(Y|X) = \prod_{j=1}^n P(y_j|y_1, \cdots, y_{j-1}, X)
+\end{equation}
+The above gives a complete factorization. To learn the potentials, we would have to come up with a way to make the given set capable of handling variable length sentences. We can parameterize using a neural network that can handle variable length inputs such as RNNs and Transformers. For an RNN, we have $s_t$ as an embedding for $y_1, \cdots, y_{j-1}$ and is computed recursively.
+\begin{align*}
+	s_0 &\longleftarrow \text{ initial state} \\
+	s_t &\longleftarrow \text{ LSTMcell}(\theta, s_{t-1}, y_{t-1}) \\
+	v_t &\longleftarrow \text{ embedding of } X
+\end{align*}
+\[P(y_j | y_1, \cdots, y_{j-1}, X) \equiv Softmax(\{y_j\}, NN_\theta [s_t, v_t])\]
+Thus, we get a standard classification problem, i.e given a $X$, find the $Y$ for which $P(Y|X)$ is maximized. The is intractable for chain graph, and thus in practice greedy inference algorithms such as Beam Search are used.
+\subsection{Learning with Hidden Variables}
+If we suppose only a subset of variables, how do we learn the parameters of the graphical model?
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (z1)  {$z_1$}; 
+		\node[main] (z2) [right of=z1] {$z_2$};
+		\node[main] (z3) [right of=z2] {$z_3$};
+		\node[main] (z4) [right of=z3] {$z_4$};
+		\node[main] (y1) [below of=z1] {$y_1$};
+		\node[main] (y2) [below of=z2] {$y_2$};
+		\node[main] (y3) [below of=z3] {$y_3$};
+		\node[main] (y4) [below of=z4] {$y_4$};
+		\draw[->] (z1) -- (y1);
+		\draw[->] (z1) -- (z2);
+		\draw[->] (z2) -- (y2);
+		\draw[->] (z2) -- (z3);
+		\draw[->] (z3) -- (y3);
+		\draw[->] (z3) -- (z4);
+		\draw[->] (z4) -- (y4);
+	\end{tikzpicture}
+	\caption{Sample HMM}
+	\label{fig:l-exmp-4}	
+\end{marginfigure}
+Say we have the HMM shown in Figure \ref{fig:l-exmp-4}. Note that we have changed the notation from $x\to y$ and $y\to z$, since $x$ is not a random variable for now. In CRF, we try to learn $P(Y|X)$ with $\mathcal{D} = \{\mathbf x^i, \mathbf y^i\}$, where all variables $y_1^i, \cdots, y_n^i$ are present in the dataset, but here in addition some variables $z_1^i, \cdots z_m^i$ are not present in $\mathcal D$. \\
+If we denote $\theta$ as the parameters of the graphical model, then
+\begin{equation}
+	P_{\theta, G}(y_1, \cdots y_n, z_1, \cdots, z_m|\mathbf x) = \dfrac{1}{Z_{\theta(\mathbf x)}}\exp\Big(\sum_C F_\theta(\mathbf y_C, \mathbf z_C, \mathbf x)\Big)
+\end{equation}
+where $C$ is the set of cliques in the graph. Suppose $\mathcal D = \{(\mathbf x^i, \mathbf y^i): i=1,\cdots,N\}$ is our dataset, we want to find
+\begin{equation}
+\begin{split}
+	\theta^{ML} &= \argmax_\theta \sum_{i=1}^N \log P_\theta(\mathbf y^i|\mathbf x^i) \\
+	&= \argmax_\theta \sum_{i=1}^N \log\bigg( \sum_{\mathbf z} P_{\theta, G}(\mathbf y^i, \mathbf z|\mathbf x^i)\bigg)
+\end{split}
+\end{equation}
+The sum over $\mathbf z$ makes the optimization difficult (because the space of values is large) and thus we want to approximate this, and for this we use a variational approach. \\
+In the variational approach, we introduce auxiliary variables and write
+\begin{equation}
+\begin{split}
+&\max_\theta \sum_{i=1}^N \log \sum_{\mathbf z:z_1, \cdots z_m}P(\mathbf y^i, \mathbf z | \theta, \mathbf x^i) \\
+&\equiv \max_\theta\sum_{i=1}^N \max_{q_{i,\mathbf z}:\sum_{\mathbf z} q_{i, \mathbf z} = 1} \sum_{\mathbf z} q_{i, \mathbf z} \log P(\mathbf y^i, \mathbf z | \theta, \mathbf x^i) - \sum_{\mathbf z} q_{i, \mathbf z} \log q_{i, \mathbf z}
+\end{split}
+\end{equation}
+This rewriting makes us avoid the summation within the log, and we have two maximization problems - over $\theta$ and all $q$ variables. The inner one can be solved in a closed form for fix $\theta$, and the outer one can be solved like a maximum likelihood problem without hidden variables. We now prove the above result. \\
+\begin{proof}
+We will show that
+\begin{equation}
+\begin{split}
+\log\sum_{z=1}^k g(y,z) &= \max_{q_1, \cdots, q_k} \sum_{z=1}^k q_z\log g(y,z) - \sum_z q_z\log q_z \\
+&s.t. \; \sum_{z=1}^k q_z = 1 \text{ and } q_z \geq 0
+\end{split}
+\end{equation}
+where the variables $q_1$ to $q_k$ are auxiliary, and
+\begin{equation}
+	Q(q, g) \triangleq \sum_{z=1}^k q_z \log g(y,z) - \sum_z q_z \log q_z
+\end{equation}
+We use the Lagrangian multipliers method to do so. \\
+Let $L(Q,\lambda) = Q(q, g) + \lambda(\sum_z q_z - 1)$. Then we can write
+\begin{align*}
+\dfrac{\partial L(Q, \lambda)}{\partial q_j} &= \log g(y, j) - \log q_j - 1 + \lambda = 0 \\
+&\implies q^*_j \equiv \alpha g(y,j) \\
+\sum_z q_z = 1 &: q_j^* = \dfrac{g(y,j)}{\sum_z g(y,z)}
+\end{align*}
+If we put this value of $q^*$ in the original equation, we get the expression to be equal to $\log\sum_{z=1}^k g(y,z)$ and get the required result. Note that for all other $q$, we have
+\[\log\sum_{z=1}^k g(y,z) \geq \sum_{z=1}^k q_z\log g(y,z) - \sum_z q_z\log q_z\]
+\end{proof}
