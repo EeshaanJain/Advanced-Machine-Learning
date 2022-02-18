@@ -381,3 +381,52 @@ Let $L(Q,\lambda) = Q(q, g) + \lambda(\sum_z q_z - 1)$. Then we can write
 If we put this value of $q^*$ in the original equation, we get the expression to be equal to $\log\sum_{z=1}^k g(y,z)$ and get the required result. Note that for all other $q$, we have
 \[\log\sum_{z=1}^k g(y,z) \geq \sum_{z=1}^k q_z\log g(y,z) - \sum_z q_z\log q_z\]
 \end{proof}
+Now coming back, the above optimization algorithm is solved using the EM Algorithm. \\
+\textbf{EM Algorithm}\\
+\begin{itemize}
+	\item[$\diamond$] \textbf{E-Step:} Solve for $q_{i, \mathbf z}$ keeping $\theta$ fixed at $\theta^t$
+	\begin{equation}
+		q_{i, \mathbf z}^t = \dfrac{P(\mathbf y^i, \mathbf z|\theta^t, \mathbf x^i)}{\sum_{\mathbf z'} P(\mathbf y^i, \mathbf z'|\theta^t, \mathbf x^i)}
+	\end{equation}
+	Here $q_{i, \mathbf z}$ is the posterior distribution of hidden variable at time $t$. \\
+	\item[$\diamond$] \textbf{M-Step:} Solve for $\theta$, keeping $q_{i, \mathbf z}$ fixed to $q_{i, \mathbf z}^t$. The problem becomes
+	\begin{equation}
+		\max_\theta \sum_i \sum_{\mathbf z} q_{i, \mathbf z}^t \log P(\mathbf y^i, \mathbf z|\theta, \mathbf x^i)
+	\end{equation}
+The above is concave in $\theta$ and can be often solved in a closed form (eg: HMM).
+\end{itemize}
+We can now use the above algorithm for graphical models.
+\subsection{EM Algorithm for Graphical Models}
+If we have a large number of possible values of $\mathbf z$, we'd need a lot of computations, but for graphical models, we don't need to directly compute all $q_{i, \mathbf z}$. We revisit the \textbf{M-Step} as follows
+\begin{align*}
+&\quad\max_{\theta}\sum_i \sum_z q_{i, \mathbf z}^t \log P(\mathbf y^i, \mathbf z|\theta, \mathbf x^i) \\
+&= \max_\theta \sum_i\sum_\mathbf{z} q_{i, \mathbf z}^t \bigg(\log \exp\sum_C F_\theta(\mathbf y_C^i, \mathbf z_C| \mathbf x^i) - \log Z_\theta(\mathbf x^i)\bigg) \\
+&= \max_\theta  \sum_i\sum_\mathbf{z} q_{i, \mathbf z}^t\bigg(\sum_C F_\theta(\mathbf y_C^i, \mathbf z_C| \mathbf x^i)\bigg) - \sum_i\log Z_\theta(\mathbf x^i) \sum_\mathbf{z} q_{i, \mathbf z}^t  \\
+&=\max_\theta \sum_i \sum_C \sum_{\mathbf z_C} F_\theta(\mathbf y_C^i, \mathbf z_C| \mathbf x^i)\sum_{\mathbf{z-z}_C} q_{i, \mathbf z}^t - \sum_i \log Z_\theta(\mathbf x^i) \\
+&=\max_\theta \sum_i \sum_C \sum_{\mathbf z_C} q_{i, \mathbf z_C}^tF_\theta(\mathbf y_C^i, \mathbf z_C| \mathbf x^i) - \sum_i \log Z_\theta(\mathbf x^i)
+\end{align*}
+\begin{exmp}
+Consider the address
+\[
+\underset{x_1}{\overset{z_1}{\text{Hostel }}}
+\underset{x_2}{\overset{z_2}{\text{11, }}}
+\underset{x_3}{\overset{y_3}{\text{IIT }}}
+\underset{x_4}{\overset{y_4}{\text{Bombay, }}}
+\underset{x_5}{\overset{z_5}{\text{Powai, }}}
+\underset{x_6}{\overset{y_6}{\text{Mumbai }}}
+\]
+Here $x_i$ denotes the tokens in the sequence. $z_i$ denotes that we are unaware of the label, and $y_i$ denotes that we are aware of the label. Say our label set is
+\[y \in \{House\#, InstName, Area, City, Other\}\]
+Also, consider a chain graph of the variables
+\[z_1 - z_2 - y_3 - y_4 - z_5 - y_6\]
+We want $q_{i:\mathbf z_C}^t$. First see $q_{1:z_1, z_2}$.
+\[
+q_{1:z_1, z_2} \equiv P(z_1, z_2 | \theta^t, y_3, y_4, y_6)
+\]
+\[
+q^t_{1:z_2}
+\]
+\[
+q^t_{1:z_3}
+\]
+\end{exmp}
