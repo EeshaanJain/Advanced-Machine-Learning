@@ -626,7 +626,7 @@ We now state the algorithm to find the maximal cliques in a triangulated graph \
 	\textbf{Input:} Triangulated graph $G$, $n=$ number of vertices in $G$\;
 	\For{$i=1$ to $n$}{
 		$\pi_i \longleftarrow$ any simplicial vertiex in $G$\;
-		$C_i \longleftrightarrow \{\pi_i\} \cup \mathcal{N}(\pi_i)$\;
+		$C_i \longleftarrow \{\pi_i\} \cup \mathcal{N}(\pi_i)$\;
 		Remove $\pi_i$ from $G$\;
 	}
 	\Return{the maximal cliques from $C_1, \cdots, C_n$}
