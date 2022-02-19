@@ -102,10 +102,10 @@ Consider an undirected graphical model on 3 binary variables $\{y_1, y_2, y_3\}$
 Consider the initial parameters as $\theta = [\theta_1, \theta_2] = [3,-2]$, and consider $\mathbf x^1 = [0.1, 0.7, 0.3]$ and $\mathbf y^1 = [1, 1, 0]$. \\
 \begin{itemize}
 	\item[$\diamond$] The log-node potentials $F_\theta(y_j, C=j, \mathbf x)$ are given as $$y_j = \theta \cdot \mathbf f(\mathbf x, y_j, j) = \theta_1 x_j y_j$$
-	For $y_1$, we have the value as $[0, 0.3]$, $y_2$ will have the value $[0, 2.1]$ and $y_3$ will have $[0, 0.09]$.
+	For $y_1$, we have the value as $[0, 0.3]$, $y_2$ will have the value $[0, 2.1]$ and $y_3$ will have $[0, 0.9]$.
 	\item[$\diamond$] The log-edge potentials $F_\theta((y_1, y_2), C=(1,2), \mathbf x)$ are given as
 	\[\theta_2f_2(\mathbf x, (y_1, y_2), (1,2))\]
-	For $(1,2)$ we have the value as $[0, -2, 0, -2]$ corresponding to $y_1y_2 = \{00, 01, 10, 11\}$ (can consider it to be a matrix for ease of understanding). Since our edge potentials don't depend on $x$, $F_\theta((y_2,y_3), C=(2,3), \mathbf x) = [0, -2, -2, 0]$. 
+	For $(1,2)$ we have the value as $[0, -2, -2, 0]$ corresponding to $y_1y_2 = \{00, 01, 10, 11\}$ (can consider it to be a matrix for ease of understanding). Since our edge potentials don't depend on $x$, $F_\theta((y_2,y_3), C=(2,3), \mathbf x) = [0, -2, -2, 0]$. 
 \end{itemize}
 \end{exmp}
 \begin{exmp}
@@ -165,10 +165,10 @@ The junction tree for the above graph is given in Figure \ref{fig:l-exmp-6-jt}. 
 \end{exmp}
 Now, coming back to the expectation, we need to compute \\ $\mathbb{E}_{\Prob(\mathbf y|\theta^\top, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y)$. To do this, we can proceed as follows:
 \begin{enumerate}
-	\item Represent the probability $\Prob(\mathbf y|\theta^\top, \mathbf x^i)$ as UGM where nodes are $y_1, \cdots y_n$ and the potential $\psi_C(\mathbf y_C, \mathbf x, \theta)$ for clique $C$ is $\exp\big(\theta^\top \cdot \mathbf f(\mathbf x^i, \mathbf y_C^i, C)\big)$.
+	\item Represent the probability $\Prob(\mathbf y|\theta^t, \mathbf x^i)$ as UGM where nodes are $y_1, \cdots y_n$ and the potential $\psi_C(\mathbf y_C, \mathbf x, \theta)$ for clique $C$ is $\exp\big(\theta^t \cdot \mathbf f(\mathbf x^i, \mathbf y_C^i, C)\big)$.
 	\item Run a sum-product inference algorithm on the above UGM and compute for each $C$, $\mathbf y_C$ the marginal probability $\mu(\mathbf y_C, C, \mathbf x^i)$.
 	\item Using these nodes, compute 
-	\[\mathbb{E}_{\Prob(\mathbf y|\theta^\top, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y) = \sum_C\sum_\mathbf{y_C} \mu(\mathbf y_C, C, \mathbf x^i)f_k(\mathbf x^i, C, \mathbf y_C)\]
+	\[\mathbb{E}_{\Prob(\mathbf y|\theta^t, \mathbf x^i)}f_k(\mathbf x^i, \mathbf y) = \sum_C\sum_\mathbf{y_C} \mu(\mathbf y_C, C, \mathbf x^i)f_k(\mathbf x^i, C, \mathbf y_C)\]
 \end{enumerate}
 Having done this, we continue Example \ref{exmp:i-1}. We can calculate marginals $\mu(y_j, j)$ and $\mu(y_k, y_j, (k,j))$, and write
 \begin{align*}
