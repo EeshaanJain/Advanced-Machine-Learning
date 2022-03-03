@@ -1,0 +1,100 @@
+\section{Sampling}
+It is often needed to sample from a joint distribution, of the form $P(y_1, \cdots, y_n)$ or $P(\mathbf x = x_1, \cdots, x_n)$ or $P(x_1, \cdots, x_r | x_{r+1} = E_{r+1}, \cdots, x_n = E_n)$. Some scenarios might be
+\begin{enumerate}
+	\item Solving an intractable inference during training
+	\item Showing a diverse set of outputs instead of just the most likely value
+	\item Calculating the expected value of some arbitrary function $f(\mathbf x)$ under distribution $P(\mathbf x)$.
+\end{enumerate}
+\subsection{Motivation}
+\begin{itemize}
+	\item[$\diamond$] Say we have a deep language model, we might want to generate sample sentences, questions or expected distribution of first word for sentences ending with '?'.
+	\item [$\diamond$] We can use VAEs for missing value imputation. This can be done by fixing values of some of the outputs, and generate most likely values of others.  
+\end{itemize}
+We had seen in VAEs how to approximate the expected value of a function with sampling. Say we have a function $f(\mathbf x): \mathcal{X} \to \mathbb{R}$ and we want $\mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] = \sum_{\mathbf x \in \mathcal X} f(\mathbf x) P(\mathbf x)$. In case of continuous $\mathbf x$, we can take the integral. Our space $\mathcal X$ is very large, and we cannot compute the integral exactly in closed form. Hence we want to sample and approximate the expectation. Say we have samples $\mathbf x^1, \cdots, \mathbf x^M \sim P(\mathbf x)$, we write
+\begin{equation}
+	\mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] = \sum_{\mathbf x \in \mathcal X} f(\mathbf x) P(\mathbf x) \approx \dfrac{1}{M} \sum_{i=1}^M f(\mathbf x^i)
+\end{equation}
+As $M \to \infty$, this approximation matches exact expected value.
+\subsection{Sampling scalar distributions}
+Let $p(x)$ be a distribution, and we want to draw samples $x^1, \cdots, x^M$. Say we can sample $u$ from $U(0,1)$ (uniform distribution). Let $F(x)$ be the CDF of $p(x)$. \\
+\noindent For $i=1, \cdots, M$ \\
+$\triangleright$ Sample $u_i \sim U(0,1)$ \\
+$\triangleright$ Find $x_i = F^{-1}(u)$ \\
+\noindent Now, say we a multinomial distribution. Say $x$ is discrete and $\in \{1, \cdots, m\}$. We have $p(x) \sim Mult(p_1, \cdots, p_m)$, $u_i \sim U(0,1)$, and if $u_i$ is between $\sum_{j=0}^{k-1} p_j$ and $\sum_{j=0}^{k} p_j$, choose $k$. 
+
+Now, as $M \to \infty$, the fraction of times we encounter a sample in the interval $[x, x+\Delta)$ would be proportional to the true probability of that in the interval in $p(x)$, i.e $F(x+\Delta) - F(x)$.
+\subsection{Sampling multivariate distributions}
+One option to sample from multivariate distributions is to factorize the distribution as a Bayesian Network, and perform \textit{forward sampling}. Such a method is used in autoregressive language models. Assume
+\[P(\mathbf x) = \prod_{j=1}^n P(x_j | \text{Pa}(x_j))\]
+Now, $y_j \sim P(y_j | y_1, \cdots, y_{j-1}, \mathbf x)  = P(y_j | s_j, \mathbf x)$. The $s_j$ is called the state in RNNs, and the calculation of probability is called softmax. \\
+\begin{algorithm}[H]\label{alg:s-fs}
+	\DontPrintSemicolon
+	$x_1, \cdots, x_n \longleftarrow$ topologically sorted according to BN \;
+	\For{$i = 1$ to $M$}{
+		$\xi^i = [0, \cdots, 0]$\;
+		\For{$j=1$ to $n$}{
+			$\xi^i_j \sim P(x_j | \xi^i_{\text{Pa}(x_j)})$\;
+		}
+	}
+	\Return{$\xi^1, \cdots, \xi^M$}
+	\caption{Forward Sampling Algorithm}
+\end{algorithm}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (a) {$x_1$}; 
+		\node[main] (b) [right of=a] {$x_2$};
+		\node[main] (c) [below = of $(a)!0.5!(b)$] {$x_3$};
+		\node[main] (d) [below right of=c] {$x_4$};
+		\node[main] (e) [below left of=d] {$x_5$};
+		\draw[->] (a) -- (c);
+		\draw[->] (b) -- (c);
+		\draw[->] (c) -- (d);
+		\draw[->] (d) -- (e);
+		\draw[->] (c) -- (e);
+	\end{tikzpicture}
+	\caption{BN Example}
+	\label{fig:s-exmp-1}
+\end{marginfigure}
+\begin{exmp}
+Consider the BN shown in Figure \ref{fig:s-exmp-1}. We start with $x_1$ as it has no parents, and we want to get $\xi^1$. 
+\begin{enumerate}
+	\item $x_1 \sim P(x_1)$. Say $x_i$ were binary, and we get $\xi_1^1 = 0$.
+	\item $x_2 \sim P(x_2)$. Say we get $\xi^1_2 = 1$. 
+	\item $x_3 \sim P(x_3 | x_1 = 0, x_2 = 1)$. Say we get $\xi^1_3 = 1$.
+\end{enumerate}
+We can proceed similarly and get our sample $\xi^1$.
+\end{exmp}
+There are drawbacks of forward sampling - mainly being it will not be consistent when we have conditions imposed. Say we want to get the probability of $x_1$ being `what' when ! is the last token. Forward sampling would have most of the sampled sentences wasted since they don't end with `!'. Another example could be when we want to complete a missing attribute in a VAE network for object generation and in this case forward sampling wouldn't match the given values most of the time. \\
+In such cases we use \textbf{importance sampling}. It is useful when it is hard to sample from $P(\mathbf x)$ or to lower the error in computation of the expected value of the function, i.e $\mathbb{E}_{P(\mathbf x)} [f(\mathbf x)]$, where $f(\mathbf x)$ has zeros at a large number of $\mathbf x$. Importance sampling samples from the important regions. \\
+In importance sampling, we get to choose $Q(\mathbf x)$, called the proposal distribution, from which it is easy to generate samples. Designing such a $Q(\mathbf x)$ is problem-dependent. For example, in a language modeling task, $Q(\mathbf x)$ is the reverse language model. \\
+Say we generate $S_Q = \{\mathbf x^1, \cdots, \mathbf x^M\}$ from $Q(\mathbf x)$. In general $\forall$ functions, $\mathbb{E}_{Q(\mathbf x)}[f(\mathbf x)] \neq \mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] $. We use the following trick
+\begin{align*}
+	\mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] &= \sum_{\mathbf x} f(\mathbf x)P(\mathbf x) \\
+	&= \sum_{\mathbf x} Q(\mathbf x) \dfrac{P(\mathbf x)}{Q(\mathbf x)}f(\mathbf x) \qquad\text{let } W(\mathbf x) = \dfrac{P(\mathbf x)}{Q(\mathbf x)}\\
+\mu_P(S_Q)	&= \dfrac{1}{M} \sum_{i=1}^M \big[ f(\mathbf x^i) W(\mathbf x^i) \big] \qquad\text{(Importance weighted estimate)}
+\end{align*}
+\begin{algorithm}[H]\label{alg:s-is}
+	\DontPrintSemicolon
+	\textbf{Given:} $M, Q(\mathbf x), P(\mathbf x)$\;
+	\For{$i = 1$ to $M$}{
+		$\xi^i \longleftarrow$ Sample from $Q(\mathbf x)$\;
+		$W^i \longleftarrow \dfrac{P(\xi^i)}{Q(\xi^i)}$
+	}
+	\Return{$(\xi^1, W^1), \cdots, (\xi^M, W^M)$}
+	\caption{Importance Sampling Algorithm}
+\end{algorithm}
+The user can decide what to do with the samples, for example
+\begin{equation}
+	\mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] = \dfrac{1}{M} \sum_{i=1}^M f(\xi^i) W^i
+\end{equation}
+The limitations for the above algorithm is that it is not applicable for $P(\mathbf x)$ where we have an intractable normalizer (such as a CRF with a large tree width graph). In such cases, we do normalized importance sampling. We assume that
+\begin{equation}
+	P(\mathbf x) = \dfrac{\widetilde{P}(\mathbf x)}{Z} \qquad \text{where }Z \text{ is intractable} 
+\end{equation}
+Then, we do
+\begin{align*}
+		\mathbb{E}_{P(\mathbf x)}[f(\mathbf x)] &= \dfrac{1}{Z} \sum_\mathbf{x} Q(\mathbf x) \dfrac{\widetilde{P}(\mathbf x)}{Q(\mathbf x)}f(\mathbf x) \\
+		&= \dfrac{1}{Z} \sum_\mathbf{x} Q(\mathbf x) \widetilde{W}(\mathbf x)f(\mathbf x) \\
+		Z &= \sum_{\mathbf x} \widetilde{P}(\mathbf x) 
+\end{align*}
