@@ -90,7 +90,7 @@ The user can decide what to do with the samples, for example
 \end{equation}
 The limitations for the above algorithm is that it is not applicable for $P(\mathbf x)$ where we have an intractable normalizer (such as a CRF with a large tree width graph). In such cases, we do normalized importance sampling. We assume that
 \begin{equation}
-	P(\mathbf x) = \dfrac{\widetilde{P}(\mathbf x)}{Z} \qquad \text{where }Z \text{ is intractable} 
+	P(\mathbf x) = \dfrac{\widetilde{P}(\mathbf x)}{Z} \quad \text{where }Z \text{ is intractable} 
 \end{equation}
 Then, we do
 \begin{align*}
@@ -98,3 +98,91 @@ Then, we do
 		&= \dfrac{1}{Z} \sum_\mathbf{x} Q(\mathbf x) \widetilde{W}(\mathbf x)f(\mathbf x) \\
 		Z &= \sum_{\mathbf x} \widetilde{P}(\mathbf x) 
 \end{align*}
+The applications for the above are
+\begin{itemize}
+	\item Undirected Graphical Model
+	\item Given a BN, we want to sample of a subset of variables conditioned on fixed value of others, i.e $P(x_1, \cdots, x_r | x_{r+1}, \cdots, x_n = evidence)$
+\end{itemize}
+Given $S_Q = \{\mathbf x^1, \cdots, \mathbf x^M\}$, we have
+\begin{equation}
+	\mathbb{E}_P [f(\mathbf x)] \approx \dfrac{1}{ZM} \sum_{i=1}^M f(\mathbf x^i) \widetilde{W}(\mathbf x^i)
+\end{equation}
+where
+\begin{eqnarray}
+	Z = \sum_{\mathbf x \in \mathcal X} \widetilde{P}(\mathbf x) = \mathbb{E}_Q [\widetilde{W}(\mathbf x)] \approx \dfrac{1}{M} \sum_{i=1}^M \widetilde{W}(\mathbf x^i)
+\end{eqnarray}
+Thus,
+\begin{equation}
+	\mathbb{E}_P [f(\mathbf x)] \approx \dfrac{\sum_{i=1}^M f(\mathbf x^i) \widetilde{W}(\mathbf x^i)}{\sum_{i=1}^M \widetilde{W}(\mathbf x^i)}
+\end{equation}
+The choice of $Q(\mathbf x)$ for which the expected square error of the estimate from the true expected value is minimum when
+\begin{equation}
+	Q(\mathbf x) \propto |f(\mathbf x)| P(\mathbf x) , \quad Q(\mathbf x) > 0 \text{ whenever } P(\mathbf x) > 0
+\end{equation}
+Normalized importance sampling is biased when $M$ is small, and designing a good $Q(x)$ for which the sampling is efficient is not always easy.
+\subsection{Markov Chain Monte Carlo Sampling}
+In forward and importance sampling, each $\mathbf x^i$ was independent, and hence we could just run all instances in parallel. But MCMC sampling is a more general case, where we have dependencies in variables. It is useful when we cannot easily design the proposal distribution. MCMC sampling is more broadly applicable as we don't need very accurate proposal distribution or we don't know need to assume BN type factorization. \\
+Such sampling is applicable when either of the following holds:
+\begin{enumerate}
+	\item It is easy to calculate conditional probability of 1 variable, i.e $P(x_i | \mathbf x_{-i})$ when the rest of the variables have fixed values.
+	\item It is easy to calculate $\dfrac{P(\mathbf x)}{P(\mathbf x')}$ and normalizer is not required. Maybe a neural network is an example here.
+\end{enumerate}
+MCMC sampling is useful when everything else fails and guaranteed to converge to optimal when we take infinite samples. \\
+Given $P(\mathbf x = x_1, \cdots, x_n)$ where $x_i \in \{1, \cdots, m\}$ is intractable to sample from but easy to evaluate.
+\begin{enumerate}
+	\item Gibbs Sampling - $P(x_i | \mathbf x - x_i) = P(x_i | \mathbf x_{-i})$
+	\item Metropolis Hastings Sampling - $\dfrac{P(\mathbf x)}{P(\mathbf x')}$
+\end{enumerate}
+We need to design the \textit{MCMC Sampling Transition Function}. It is designed much like the proposal distribution. Thus,
+\begin{equation}
+\sum_{x \in X} T(x | x') = 1 \quad \text{where } T(x | x') \geq 0 \; \forall \; x, x' \in X \text{ and } |X| = m^n
+\end{equation}
+where $X$ is the space of all $x$. \\
+\begin{algorithm}[H]\label{alg:s-mcmc}
+	\DontPrintSemicolon
+	Start with an initial sample $x^0$\;
+	\For{$t = 1$ to $L$ where $L$ is large}{
+		$x^{t+1} \sim T(x | x' = x^t)$ \;
+		$x^0 \to x^1 \to x^2 \to \cdots \to x^L$ \;
+	}
+	Actually perform the sampling for $t = L+1$ to $t = L + Mk$\;
+	$x^t \sim T(x | x^{t-1})$ \;
+	\Return{$x^{L+k}, \cdots, x^{L+Mk}$}
+	\caption{MCMC Sampling Algorithm}
+\end{algorithm}
+In Gibbs Sampling, $T(x|x')$ is defined as \\
+$T(x|x') = 0$ if $x$ and $x'$ differ in more than one co-ordinate \\
+$T(x|x') = \frac{1}{n} \sum_{i=1}^n P(x_i |  x'_{-i})$ if $x = x'$ \\
+$T(x|x') = P(x_i | x_{-i}')$ if $x \neq x'$ \\
+\begin{exmp}
+	\begin{marginfigure}
+		\centering
+		\begin{tikzpicture}[->,main/.style = {draw, circle}] 
+			\node[main] (a) {$2, 2$}; 
+			\node[main] (b) [right of=a] {$1, 2$};
+			\node[main] (c) [right of=b] {$2, 1$};
+			\node[main] (d) [right of=c] {$1, 1$};
+			\path
+			(b) edge[bend left, above] (a)
+			    edge[loop below] (b)
+				edge[bend left, above] (d);
+		\end{tikzpicture}
+		\caption{Markov Chain}
+		\label{fig:s-exmp-2}
+	\end{marginfigure}
+For $n = 2$ and $m = 2$. Thus each $x_i$ can either be 1 or 2. Thus, \\
+$T(x|x' = [1, 2]) = 0$ if $x = [2, 1]$ \\
+$T(x|x' = [1,2]) = \frac{1}{2} P(x_1 = 1 | x_2 = 2) + \frac{1}{2} P(x_2 = 2 | x_1 = 1)$ if $x = [1,2]$ \\
+$T(x|x' = [1,2]) = P(x_1 = 2 | x_2 = 2)$ if $x = [2, 2]$ \\
+$T(x|x' = [1,2]) = P(x_2 = 2 | x_1 = 1)$ if $x = [1, 2]$  \\
+For the above transition probabilities, we can have a graph as shown in Figure \ref{fig:s-exmp-2}. 
+\end{exmp}
+Consider finite state space $X$, where we have states $1$ to $m^n$ and say we choose an arbitrary initial state $x^0$ at $t = 0$. We want to calcualte $T(x | x^0)$. This $T(x|x^0)$ is a multinomial distribution over all states. We sample from this. At $t = 0$, $P_{t=0}(x) = 1$ if $x = x^0$ and $0$ else. At $t = 1$, we want $P_{t=1}(x) = T(x | x^0)$. At $t=2$, the probability of being in state $x$ is $P_{t=2}(x) = \sum_{x'} T(x | x') T(x' | x^0) = \sum_{x'} T(x|x') P_{t-1}(x')$. Thus in general
+\begin{equation}
+	P_t(x) = \sum_{x'} T(x|x') P_{t-1}(x')
+\end{equation}
+As $t \to \infty$, $P_{t+1}(x) \approx P_t(x)$ for convergence as $t\to\infty$ and this is equal to the stationary distribution $\pi(x)$. We are interested in $T(x|x')$ for which $P_{t+1}(x) = \sum_{x'} P_t(x') T(x|x')$ and as $t \to \infty$
+\begin{equation}
+	\pi(x) = \sum_{x'} \pi(x') T(x|x')
+\end{equation}
+has a unique solution for given $T(x|x')$ and $\pi(x)$ should be reachable from any initial state $x^0$ via Markov walks using $T(x|x')$.
