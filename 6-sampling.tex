@@ -185,4 +185,185 @@ As $t \to \infty$, $P_{t+1}(x) \approx P_t(x)$ for convergence as $t\to\infty$ a
 \begin{equation}
 	\pi(x) = \sum_{x'} \pi(x') T(x|x')
 \end{equation}
-has a unique solution for given $T(x|x')$ and $\pi(x)$ should be reachable from any initial state $x^0$ via Markov walks using $T(x|x')$.
+has a unique solution for given $T(x|x')$ and $\pi(x)$ should be reachable from any initial state $x^0$ via Markov walks using $T(x|x')$. \\
+\begin{rem}
+$P_t(x)$ is the probability of being in state $x$ after $T$ MCMC steps, but it is conditioned on $x_0$, i.e the initial state.
+\end{rem}
+\begin{rem}
+	It is not necessary that $\pi(x)$ is unique, but it can be proven that for the transition matrix $T(\cdot)$, we will at least get 1 stationary distribution.
+\end{rem}
+\begin{exmp}[Single Solution]
+Consider a state space such that $|\mathcal X| = 3$ and we have
+\[T = \begin{bmatrix}
+	0.25 & 0.5 & 0 \\
+	0.75 & 0 & 0.75 \\
+	0 & 0.5 & 0.25
+\end{bmatrix}\]
+In the matrix, the columns denote $x'$ and rows denote $x$, thus we should sum to $1$ over all columns. \\
+\[\pi(x) = [\pi_1, \pi_2, \pi_3]\]
+\begin{align*}
+	\pi(x) &= \sum_{x'} \pi(x') T(x|x') \\
+	\pi_1 &= 0.25\pi_1 + 0.5\pi_2 \\
+	\pi_2 &= 0.75\pi_1 + 0.75\pi_3 \\
+	\pi_3 &= 0.5\pi_2 + 0.25\pi_3 \\
+	\pi_1 &+ \pi_2 + \pi_3 = 1
+\end{align*}
+We get
+\[\pi_1 = \frac{2}{7}, \pi_2 = \frac{3}{7}, \pi_3 = \frac{2}{7}\]
+Notice that $1$ and $3$ are symmetric, as seen in $T$ too.
+\end{exmp}
+\begin{exmp}[Multiple Solutions]
+Say that
+\[
+T(x|x') = \begin{cases}
+	1 \text{ if } x = x' \\
+	0 \text{ otherwise}
+\end{cases}
+\]
+Any stationary distribution is valid, and $T$ is an identity matrix. Thus, infinite number of solutions and 
+\[P_t = \delta(x^0)\]
+\end{exmp}
+\begin{exmp}[Unreachable Solution]
+Even when $T(x|x')$ has a unique stationary distribution $\pi_T(x)$, this distribution may not be the one we can reach or converge to via MCMC walks.
+\[
+T(x|x' ) = \begin{cases}
+	1 \text{ if } x \neq x' \\
+	0 \text{ otherwise}
+\end{cases}
+\]
+$\pi_1 = \pi_2, \pi_2 = \pi_1$ and $\pi_ 1 + \pi_2 = 1$. Thus we get
+\[\pi_1 = \pi_2 = \frac{1}{2}\]
+This is an unreachable solution since we aren't guaranteed to reach it via MCMC sampling. Say
+\begin{align*}
+	&t = 0 \quad x^0 = v_1 \quad t \text{ is even } x^t = v_1 \\
+	&t = 1 \quad x^1 = v_2 \quad t\text{ is odd } x^t = v_2
+\end{align*}
+\end{exmp}
+\begin{defn}[Ergodicity]
+Markov chains with a unique $\pi(x)$ that can be reached via MCMC steps irrespective of starting point are called ergodic.
+\end{defn}
+\begin{defn}[Regular]
+A Markov chain is regular if there exists a $k$ such that $x$ to $x'$ can be reached in exactly $k$ steps.
+\end{defn}
+\begin{thm}
+When number of states is finite, then a Markov chain is ergodic iff it is regular.
+\end{thm}
+\begin{proof}
+Skipped.
+\end{proof}
+\begin{exmp}
+In the single solution example above, let us see what $k$ means. For $k=1$, $v_1 \to v_3$ not possible in $1$ step and thus, it is not ergodic for $k=1$. Now for $k = 2$ we need to check all possibile transitions and we find that the Markov chain is regular with $k=2$.
+\end{exmp}
+Manually checking might get cumbersome, and we have a simpler sufficient condition as follows - 
+\begin{lem}
+A finite state Markov chain is regular when 
+\begin{enumerate}
+	\item every state has a self loop with non-zero probability
+	\item between any two states $\exists$ a path of non-zero probability
+\end{enumerate}
+\end{lem}
+Note that the condition above is $when$ and not $iff$. 
+
+\begin{thm}
+Markov chains defined by Gibbs sampling is ergodic, and has a stationary distribution on $P(\mathbf x)$ when $P(\mathbf x)$ is positive.
+\end{thm}
+\begin{proof}
+Recall that
+\[
+T(x|x') = \begin{cases}
+	0 \text{ if } x \text{ and } x' \text{ differ in more than one coordinate} \\
+	\frac{1}{n} \sum_{i=1}^n P(x_i | x'_{-i}) \text{ if } x = x' \\
+	P(x_i | x_{-i}') \text{ if } x \neq x', \text{ i.e } x_{-i} = x'_{-i}
+\end{cases}
+\]
+Since $P(\mathbf x)$ is positive, self-loop probability is positive as $\forall \; \mathbf x$ $T(\mathbf x | \mathbf x')> 0$.
+We can reach from $\mathbf x' \to \mathbf x$ with non-zero probability in $n$ steps at maximum. Now to show $\pi(\mathbf x) = P(\mathbf x)$.
+\begin{align*}
+	\pi(\mathbf x) &= \sum_{\mathbf x'} T(\mathbf x | \mathbf x') \\
+	&= \sum_{\mathbf x'} P(\mathbf x') T(\mathbf x | \mathbf x') \\
+	&= \sum_{x_1'} P(x_1', x_2, \cdots, x_n) \frac{1}{n} P(x_1, \cdots, x_n) + \cdots \\&\quad+ \sum_{x_n'} P(x_1, \cdots, x_{n-1}, x_n') \frac{1}{n} P(x_n | x_1, \cdots, x_{n-1}) \\
+	&= P(x_2, \cdots, x_n) \frac{1}{n} P(x_1, \cdots x_n) + \cdots \\&\quad+ \frac{1}{n} P(x_1, \cdots x_{n-1}) P(x_n | x_1, \cdots x_{n-1}) \\
+	&= \frac{1}{n} P(x_1, \cdots, x_n) + \cdots + \frac{1}{n}P(x_1, \cdots, x_n) \\
+	&= P(x_1, \cdots, x_n)
+\end{align*} 
+\end{proof}
+In undirected graphical models, it is easy to find the probabilities.
+\[
+P(x_1, \cdots, x_n) = \dfrac{1}{Z} \prod_C \psi_C (\mathbf x_C)
+\]
+\begin{equation}
+	\begin{split}
+		P(x_i | \mathbf x_{-i}) &= \dfrac{P(x_1, \cdots, x_n)}{\sum_{x_i} P(x_1, \cdots, x_n)} \\ &= \dfrac{\prod_C \psi_C (\mathbf x_C)}{\sum_{x_i} \prod_C \psi_C(\mathbf x_C)} = \dfrac{\prod_{C: i \in \mathcal C} \psi_C(\mathbf x_C)}{\sum_{x_i}\prod_{C: i \in \mathcal C} \psi_C(\mathbf x_C)}
+	\end{split}
+	\end{equation}
+\begin{marginfigure}
+	\centering
+	\begin{tikzpicture}[main/.style = {draw, circle}] 
+		\node[main] (1) {$1$}; 
+		\node[main] (2) [above right of=1] {$2$}; 
+		\node[main] (3) [below right of=1] {$3$}; 
+		\node[main] (4) [below right of=2] {$4$}; 
+		\draw[-] (1) -- (2);
+		\draw[-] (4) -- (3);
+		\draw[-] (1) -- (3);
+		\draw[-] (2) -- (4);
+		\draw[-] (3) -- (2);
+	\end{tikzpicture}
+	\caption{Sample UGM}
+	\label{fig:s-exmp-3}		
+\end{marginfigure}
+\begin{exmp}
+Say we have the undirected graphical model as shown in Figure \ref{fig:s-exmp-3}. In this case, we can write
+\[
+\begin{split}
+	P(x_1 | \mathbf x_{-1}) &= \dfrac{\psi_{123}(x_1, x_2, x_3)\psi_{234}(x_2, x_3, x_4)}{\sum_{x_1}\psi_{123}(x_1, x_2, x_3)\psi_{234}(x_2, x_3, x_4)} \\
+	&= \dfrac{\psi_{123}}{\sum_{x_1} \psi_{123}(x_1, x_2, x_3)}
+\end{split}
+\]
+\end{exmp}
+\textbf{Limitations of Gibbs}
+\begin{enumerate}
+	\item For a continuous distribution, $P(x_i | x_{-i})$ may not be easy to obtain
+	\item When variables are highly correlated, Gibbs sampling which only had local moves might have high probability states whose neighbors are mostly low probability leading to poor mixing.
+\end{enumerate}
+\begin{exmp}[Poor mixing]
+Say we have
+\[
+P(x_1, x_2) = \begin{cases}
+	\dfrac{1- \epsilon}{2} \text{ if } x_1 = x_2, \; x_i \in \{0,1\}\\
+	\dfrac{\epsilon}{2} \text{ if } x_1 \neq x_2 \; \text{ and } \epsilon \text{ is small}
+\end{cases}
+\]
+Say we compute $T([0,0] | [0, 0])$.
+\[T([0, 0] | [0, 0]) = \dfrac{1}{2} \Big[P(x_1 = 0| x_2 = 0) + P(x_2 = 0 | x_1 = 0) \Big]= 1- \epsilon\]
+By symmetry $T([1, 0] | [0, 0]) = T([0, 1] | [1, 1]) = \frac{\epsilon}{2}$ and when $\epsilon \to 0$, we mostly will get [0, 0] and [1, 1] states. To go to [1, 1] from [0, 0] we need to take a low probability path, and thus we have high probability islands with no direct transition between them. 
+\end{exmp}
+\subsection{Metropolis Hastings Sampling}
+This is motivated by the need to design moves that go from one high probability state to another without passing through low probability states. In this algorithm, $T(\cdot)$ isn't the sole determiner of transition, but is a proposal distribution for transitions. The Metropolis Hastings Algorithm has that
+\begin{enumerate}
+	\item Choose any proposal distribution for transferring from $x$ to $x'$ i.e $T^Q(x \to x')$
+	\item Use $T^Q$ to propose a transition from $x \to x'$. We accept the proposal with probability $A(x \to x')$ and transition or stay in $x$. Then we define
+	\begin{align}
+		T(x\to x') &= T^Q (x \to x') A(x \to x') \quad x \neq x' \\
+		T(x \to x') &= T^Q (x \to x) + \sum_{x' \neq x} T^Q (x\to x') (1 - A(x \to x'))
+	\end{align}
+\end{enumerate}
+\begin{defn}[Reversible chain]
+A finite state Markov Chain $T$ is reversible, if $\exists$ a unique $\pi$ such that $\forall \; x, x' \in \mathcal X$
+\begin{equation}
+	\pi(x') T(x' \to x) = \pi (x) T(x \to x')
+\end{equation}
+The above equation is called the \textbf{Detailed Balance Equation (DBE)}.
+\end{defn}
+\begin{thm}
+If $\pi(x)$ satisfies the above equation, then $\pi(x)$ is a stationary distribution of $T$.
+\end{thm}
+\begin{proof}
+$\sum_{x'} \pi(x') T(x' \to x) = \pi(x) \sum_{x'} T(x \to x') = \pi (x)$
+\end{proof}
+Now, a task is to choose $A$. We need to design $A$ to satisfy \textbf{DBE} for $x \neq x'$.
+\[\pi(x)T^Q(x\to x') A(x\to x') = \pi(x') T^Q (x' \to x) A(x' \to x)\]
+\begin{equation}
+	A(x \to x') = \min\bigg[1, \dfrac{\pi(x')T^Q(x' \to x)}{\pi(x) T^Q(x\to x')}\bigg]
+\end{equation}
+Given a desired stationary distribution $P(\mathbf x)$, designing the $A(\cdot)$ just requires the user provided $T^Q$ and the ratio of probabilities $\frac{P(\mathbf x')}{P(\mathbf x)}$.
