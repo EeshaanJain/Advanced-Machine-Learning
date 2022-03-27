@@ -1,0 +1,178 @@
+\section{Time Series Forecasting}
+\subsection{Temporal Sequences}
+They are of two types
+\begin{enumerate}
+	\item Regular time-series
+	\begin{itemize}
+		\item Daily traffic on individual webpages from different regions in Wikipedia
+		\item Hourly load on various servers of different services in a data center
+		\item Monthly demand for products from different regions in a company
+	\end{itemize}
+	\item Irregular event sequences
+	\begin{itemize}
+		\item User visits to a music service and the song played
+		\item Event logs of a system
+		\item Attacks on a system
+	\end{itemize}
+\end{enumerate}
+\begin{defn}[Temporal Sequence]
+A three-tuple ($t_k^i, x_k^i, y_k^i)$ with $t_k^i$ denoting the time of the $k^{th}$ event of the $i^{th}$ sequence, $x$ denoting the input features and $y$ denoting the value. The sequences are related to each other, and $i$ could span a multi-dimensional space.
+\end{defn}
+One of the major tasks on temporal sequences is probabilistic forecasting (either long-term or short-term). In case of event sequences, we would want to predict the time and type of the event. Other tasks denote outlier detection and missing value imputation. 
+\subsection{Probabilistic Forecasting}
+Early time-series forecasting methods include
+\begin{enumerate}
+	\item Statistical time-series methods: ARIMA, Box-Jenkins. They are local and cannot handle features $x_j$, non-stationarity and interactions.
+	\item State space models: Kalman Filters. They simplify assumption (linear Gaussian) which may not hold in practice.
+	\item Classical ML: Regression methods. Domain experts featurize history using wavelets or Fourier coefficients, and powerful regressors such as Boosted regression trees to predict $y$.
+\end{enumerate}
+Neural models for time-series forecasting encode history using neural sequence model such as RNNs, CNNs, Transformers with self-attention. In the RNN encoder, say $g_i$ is the hidden state at time-step $i$, and the inputs to $g_i$ will be $g_{i-1}, y_{i-1}, embd(x_i)$ where $embd(\cdot)$ denotes an embedding and the output will be the next hidden state. In the RNN decoder, the inputs will be $g_{i-1}, y_{i-1}, embd(x_i)$ but the outputs will be $g_{i+1}$ and $\sigma_i, \mu_i = NN(g_4)$, i.e we pass the hidden state through a feedforward neural network and get $\sigma_i$ and $\mu_i$, and finally write
+\begin{equation}
+	P(y_j | \cdot) \sim \mathcal{N}(\widehat{\mu}_j, \widehat{\sigma}^2_j)
+\end{equation}
+We can also use mixture of Gaussians or non-parameterized quantiles. Thus
+\begin{align}
+	\mathbf{g}_j^i &= RNN([y_{j-1}^i, \mathbf{x}_j^i]:j=1,\cdots,n|\theta_{enc}) \\
+	\mathbf{h}_j^i &= FF([\mathbf{g}_j^i, \mathbf{x}_j^i]: j=n, \cdots, n+K | \theta_{dec}) \\
+	\mu_j^i &= \theta_\mu[\mathbf{h}_j^i, 1] \\
+	\sigma_j^i &= \log(1 + e^{\theta_\sigma[\mathbf{h}_j^i, 1]}) \\
+	\Prob(y_j^i | \mathbf{x}_j^i, &(\mathbf{x}_1^i, y_1^i), \cdots, (\mathbf x_{j-1}^i, y_{j-1}^i)) = \mathcal{N}(\mu_j^i, \sigma_j^i)
+\end{align}
+Very often single Gaussian is insufficient, we use a mixture of Gaussians. Thus, the last layers outputs $k$ mixture components, means, variance. In MoG, we define the weight of the component $p_j$ and the mean, variance $\mu_j, \sigma_j$. We define 
+\begin{equation}
+	P(y_j^i|H_t, x_j^i) = {\sum_{k=1}^K p_{jk}^i \mathcal{N}(y_j^i|\mu_{jk}^i, \sigma_{jk}^i)}
+\end{equation}
+To train the above, we model the full joint distribution and maximize it, i.e
+\begin{equation}
+	\sum_{i:series}\sum_{j:pos} \log P(y_j^i | \theta(x_j^i, (x_1^i, y_1^i), \cdots, (x_{j-1}^i, y_{j-1}^i)))
+\end{equation}
+The parameters $\theta$ are trained end to end jointly over all series and training is efficient and easily parallelizable. \\
+The limitation of the approach is that it does not output the joint distribution over multiple predictions, it makes both along time and along different items. We address this via GP and Gaussian Copula.
+\subsection{Multivariate Forecasting}
+The general setup for the problem is that given input features $x_t$, we want 
+\begin{equation}
+	z_{1}, \cdots, z_T \implies P(z_{T+1}, \cdots, z_{T+\tau})
+\end{equation}
+Multivariate time series is used to refer to forecasting independently values of multiple time series, and we want to model jointly the values of multiple series. If a future value of one series is higher, we would like the other to be higher if positively correlated or lower if negatively correlated. Thus, instead of scalar forecasting, we do
+\begin{equation}
+	\mathbf{z}_1, \mathbf{z}_2, \cdots, \mathbf{z}_T \implies P(\mathbf{z}_{T+1}, \cdots, \mathbf{z}_{T+\tau})
+\end{equation}
+where $\mathbf{z}_j \in \mathbb{R}^N$. A simple LSTM vectorial approach could learn an autoregressive model with an LSTM with state $\mathbf{h}_t$. The inputs will be $z_{1t}, \cdots, z_{Nt}$, and the output will be the normal distribution of next time-step i.e $P(\mathbf z_{t+1} | \mathbf{h}_t) = \mathcal{N}(\mu_t, \Sigma_t)$. The multivariate model has transition dynamics as
+\begin{equation}
+	\mathbf{h}_t = \varphi_{\theta_h}(\mathbf{h}_{t-1}, \mathbf{z}_{t-1}) \in \mathbb{R}^k
+\end{equation}
+We can factorize the joint distribution as
+\begin{equation}
+	p(\mathbf{z}_1, \cdots, \mathbf{z}_{T+\tau}) = \prod_{t=1}^{T+\tau} P(\mathbf{z}_t|\mathbf{z}_1, \cdots, \mathbf{z}_{t-1}) = \prod_{t=1}^{T+\tau}P(\mathbf{z}_t | \mathbf{h}_t)
+\end{equation}
+The training is by minimizing the NLL of the multivariate Gaussian as
+\begin{equation}
+	-\log P(\mathbf{z}_1, \cdots, \mathbf{z}_T) = -\sum_{t=1}^T \log P(\mathbf z_t | \mathbf h_t)
+\end{equation}
+The downside of the method is that $N$ is very large, and $\mathbf{h}_t \in \mathbb{R}^k$, thus $\mathcal{O}(Nk)$ parameters. Projecting $\mathbf{h}_t$ to likelihood parameters of $P(\mathbf z_t | \mathbf h_t)$ has $\mathcal{O}(N^2k)$ parameters. \\
+The issues with this model are
+\begin{enumerate}
+	\item Large number of parameters, expensive to compute
+	\item All time series at training time need to be available during inference
+	\item Different scales of time series and non-Gaussian data
+\end{enumerate}
+\subsection{Low-rank Gaussian Copula Process}
+The covariance matrix in GP is expressed through a kernel. Say $\mathbf{y}_{i,t} = [\mathbf h_{i,t};\mathbf{e}_i]^\top \in \mathbb{R}^{p\times1}$ with $\mathbf e_i$ as the learned embeddings of the feature, we parameterize a Gaussian process $g_t(\mathbf y_{i,t})$ as
+\begin{equation}
+	g_t \sim GP(\widetilde{\mu}(\cdot), k(\cdot, \cdot)) \text{ with } k(\mathbf y, \mathbf y') = \mathbb{1}_{\mathbf y = \mathbf y'} \widetilde{d}(\mathbf y) + \widetilde{\mathbf{v}}(\mathbf y)^\top \widetilde{\mathbf{v}}(\mathbf y')
+\end{equation}
+where $\mu_i(\mathbf h_{i,t}) = \widetilde{\mu}(\mathbf y_{i,t})$, $d_i(\mathbf h_{i,t}) = \widetilde{d}(\mathbf y_{i,t})$ and $\mathbf{v}_i(\mathbf h_{i,t}) = \widetilde{\mathbf v}(\mathbf y_{i,t})$. Unlike before, now we can process each time series separately, with each one giving as output the $\mu_{it}, d_{it}, v_{it}$. The covariance matrix is given as
+\begin{equation}
+	\Sigma(\mathbf h_t) = \text{diag}(d_i(\mathbf h_i,t))+ \begin{bmatrix}
+		\mathbf v_1(\mathbf h_{1,t}) \\ \vdots \\ \mathbf v_{N}(\mathbf h_{N,t})
+	\end{bmatrix}
+\begin{bmatrix}
+	\mathbf v_1(\mathbf h_{1,t}) \\ \vdots \\ \mathbf v_{N}(\mathbf h_{N,t})
+\end{bmatrix}^\top = D_t + V_tV_t^\top
+\end{equation}
+where $D_t \in \mathbb{R}^{N\times N}$, $V_t \in \mathbb{R}^{N \times r}$ which has $\mathcal{O}(N\times r)$ parameters. Also, $V_tV_t^\top$ is a low-rank matrix with rank hyperparameter $r \ll N$. Thus, our low-rank likelihood evaluation is $\mathcal{O}(Nr^2 + r^3)$. \\
+Often, data doesn't look Gaussian and we use a Gaussian copula.
+\begin{equation}
+	C(F_1(z_1), \cdots, F_d(z_N)) = \phi_{\mu, \Sigma}(\Phi^{-1}(F_1(z_1)), \cdots, \Phi^{-1}(F_N(z_N)) )
+\end{equation}
+$F_i$ is the empirical CDF of $z_{it}$.
+\subsection{Long-Horizon Forecasting}
+In this section, we review the paper
+\begin{center}
+	\textit{Coherent Probabilistic Aggregate Queries on Long-horizon Forecasts}
+\end{center}
+Short-term forecasting typically deals with forecasting few tens of values or lesser while long-term forecasting deals with few hundred or thousands of values. The latter task is more challenging because of computational limitations and because we have to model dependencies over long range in both history and forecast-horizon. In general it is often useful to look at aggregated values of a window in a forecast horizon - such as looking at monthly forecasts for daily sales data. Aggregations can also be of different types, such as trend or difference of sum. As we choose higher level of windows in aggregation, noise cancels out. Distribution is forecasted at a base level and we can also aggregate such base-level distributions to obtain an aggregate. \\
+Auto-regressive models suffer from drift caused by cascading errors (in RNN - during prediction, the predicted $y$ values are fed back which may be erroneous). Also, computing aggregate distributions using auto-regressive models require repeated sampling steps which is computationally expensive. Non auto-regressive models (NAR) offer an efficient way to calculate all values and has been shown to work well in practice. The limitation to NAR models is that it is difficult to capture top-level patterns when the time-series contains noise. \\
+The idea of the paper is to use a NAR model to efficiently compute long-range probabilistic forecasts, and aggregate forecasts to guide potentially noisy base-level forecasts to more accurate forecasts, and finally establish coherency between the base-level and aggregate forecasts. The setup in the base-level is as follows: given $H_T$ as $(\mathbf x_1, y_1), \cdots, (\mathbf x_T, y_T)$ where $\mathbf x_t \in \mathbb{R}^d$, we need to predict $y_j$ in the forecast horizon given as $(\mathbf x_{T+1}, y_{T+1}), \cdots, (\mathbf x_{T+R}, y_{T+R})$. In aggregation, the $j^{th}$ value of the $i^{th}$ aggregate series as
+\begin{equation}
+	z_j^i = \mathbf{a}^i \mathbf y_{w_i, j} = \sum_{r=1}^{K_i} a_r^i y_{r+(j-1)K_i}
+\end{equation}
+The average of a window
+\begin{equation}
+	a_r^i = \dfrac{1}{K_i} \implies z_j^i = \sum_{r=1}^{K_i} \dfrac{1}{K_i} y_{r+(j-1)K_i}
+\end{equation}
+The trend aggregate (1D regression) has
+\begin{equation}
+	a_r^i = \dfrac{r}{K_i} - \dfrac{K_i+1}{2K_i} \implies z_j^i = \sum_{r=1}^{K_i} \bigg(\dfrac{r}{K_i} - \dfrac{K_i+1}{2K_i}\bigg) y_{r+(j-1)K_i}
+\end{equation}
+Hence, essentially we have taken weighted average with constant-fixed weights. \\
+The forecasting model is a transformer based architecture with a warm start window between encoder and decoder input to provide a context to the decoder so that it learns better representation. Say our dummy input is $(\mathbf x_i, y_i)_{i=1}^4$ and we want to predict $y_5, y_6$. Thus our encoder input will be $(\mathbf x_i, y_i)_{i=1}^4$, warm start window will be $(\mathbf x_i, y_i)_{i=3}^4$ and the decoder input will be $(\mathbf x_i, 0)_{i=5}^6$. All of these are passed through a convolution back applied on a small window to extract representations that can be fed to the transformer. Then, the encoder and window+decoder is passed through separate multi-head self attention layers followed by encoder-decoder cross attention layer which outputs $(\widehat{\mu}_i, \widehat{\sigma}_i)_{i=5}^6$. For each aggregate, a separate forecast model is trained and
+\begin{equation}
+	\widehat{P}(z_j^i, H_T, \mathbf{x}_j) \sim \mathcal{N}(\widehat{\mu}(z_j^i), \widehat{\sigma}(z_j^i))
+\end{equation}
+Since all aggregates are trained independently, the forecast distributions across aggregates are incoherent. In order to get the coherence, a new consensus distribution $Q(\cdot, \cdot)$ is inferred over base-level forecasts as
+\begin{equation}
+	Q \sim \mathcal{N}(\mu, \Sigma) \text{ where }\mu = [\mu_{T+1}, \cdots, \mu_{T+R}]^\top
+\end{equation}
+and $\Sigma$ is the covariance matrix of the joint distribution. With this tractable form, we can compute the marginal distribution for aggregate variable $z_j^i$ as 
+\begin{equation}
+	Q_j^i = \mathcal{N}(\mu^\top_{w_i, j} \cdot \mathbf{a}^i, \mathbf{a}^{i^\top} \cdot \sum_{w_i, j} \mathbf{a}^i)
+\end{equation}
+Now, for coherency, the KL distance between $Q$ and $\widehat{P}$ is minimized as
+\begin{equation}
+	\min_{\mu, \Sigma} \sum_{i\in\mathcal A} \sum_{j=T_i}^{T_i+R_i} \alpha_i D_{KL}\Big(Q_j^i (z_j^i | \mu, \Sigma) \|\widehat{P}(z_j^i | \cdot)\Big)
+\end{equation}
+\marginnote{
+The KL distance between two Gaussians is given as (parameterized by $p$ and $q$, i.e $D_{KL}(\mathcal{N}_q \|\mathcal{N}_p)$)
+\begin{equation}
+\frac{(\mu_q - \mu_p)^2 + \sigma_q^2}{2\sigma_p^2} - \log \frac{\sigma_q}{\sigma_p} - \frac{1}{2}
+\end{equation}
+}
+\begin{align*}
+RHS &= D_{KL} \Big(\mathcal{N}(\mu^\top_{w_i, j} \mathbf{a}^i, \mathbf{a}^{i^\top} \sum_{w_i, j} \mathbf{a}^i)\|\mathcal{N}(\widehat{\mu}(z_j^i), \widehat{\sigma}(z_j^i))\Big) \\
+&= \dfrac{\Big(\mu^\top_{w_i, j}\mathbf{a}^i - \widehat{\mu}(z_j^i)\Big)^2 + \Big(\mathbf{a}^i, \mathbf{a}^{i^\top} \sum_{w_i, j} \mathbf{a}^i\Big)^2}{2(\widehat{\sigma}(z_j^i))^2} - \log \dfrac{\mathbf{a}^{i^\top} \sum_{w_{i,j}}\mathbf{a}^i}{(\widehat{\sigma}(z_j^i))^2} 
+\end{align*}
+Substituting the above expression as $D_{KL}$, we get the complete objective function. We can split it into 2 optimization problems. The first one is
+\begin{equation}
+	\min_\mu \sum_{i\in\mathcal A} \sum_{j=T_i}^{T_i + R_i} \dfrac{1}{(\widehat{\sigma}(z_j^i))^2} \Big(\mu_{w_{i,j}}^\top \mathbf a^i - \widehat{\mu}(z_j^i)\Big)^2
+\end{equation}
+can be solved in closed form. The second one is
+\begin{equation}
+	\min_\Sigma \sum_{i\in\mathcal A} \sum_{j=T_i}^{T_i + R_i}  \dfrac{\Big(\mathbf{a}^i, \mathbf{a}^{i^\top} \sum_{w_{i,j}} \mathbf{a}^i\Big)^2}{2(\widehat{\sigma}(z_j^i))^2} - \log {\mathbf{a}^{i^\top} \sum_{w_{i,j}} \mathbf{a}^i}
+\end{equation}
+has $R^2$ parameters in $\Sigma$ and cannot be solved in closed form. Hence to efficiently solve for $\Sigma$, we use low-rank aproximation as
+\begin{equation}
+	\widehat{\Sigma} = \text{diag}(\sigma_{T+i}^2)_{i=1}^R + \begin{bmatrix}
+		v_{T+1} \\ \vdots \\ v_{T+R}
+	\end{bmatrix}
+\begin{bmatrix}
+	v_{T+1} \\ \vdots \\ v_{T+R}
+\end{bmatrix}^\top
+\end{equation}
+where $v_{T+r} \in \mathbb{R}^k$. This has $\mathcal{O}(R)$ parameters and can be stored purely in form of diagonal and $v$ vectors. \\
+For training, the large time-series is split into chunks of size $T+R$. The training objective is given as (for $\theta^i$ to be the parameters of the $i^{th}$ model)
+\begin{equation}
+	\max_{\theta_i} \sum_{\mathbf (x_j^i, \mathbf z_j^i)} \sum_{t=T_i+1}^{T_i + R_i} \log \mathcal{N}(z_t;(\mu_t, \sigma_t) = F(H_T, \mathbf x, t | \theta^i))
+\end{equation}
+The evaluation metrics for this task would be
+\begin{enumerate}
+	\item Mean Absolute Error
+	\item Mean Square Error
+	\item Continuous Ranked Probability Score given by
+	\begin{equation}
+	\begin{split}
+		\Lambda_\alpha(q, y_t) &= (\alpha - \mathcal{I}_{[y_t < q]})(y_t-q) \\
+		\text{CRPS}(F_t^{-1}, y) &= \int_0^1 2 \Lambda_\alpha(F^{-1}(\alpha), y_t)d\alpha
+	\end{split}
+	\end{equation}
+\end{enumerate}

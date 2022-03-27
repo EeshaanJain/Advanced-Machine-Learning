@@ -1,0 +1,28 @@
+\section{Generative Adversarial Networks}
+It is seen that PixelCNNs define a tractable density function like BNs, optimizing
+\begin{equation}
+	p_\theta(x) = \prod_{i=1}^n p_\theta (x_i | x_1, \cdots, x_{i-1})
+\end{equation}
+and VAEs define an intractable density function with latent $\mathbf z$ as
+\begin{equation}
+	p_\theta(x) = \int p_\theta(z) p_\theta(x|z) dz
+\end{equation}
+We optimize the lower bound on likelihood in this case. If we want the ability to just sample and not want an explicit modeling density, we can use GANs.
+\\
+GANs don't work with any explicit density function but instead take a game theory approach and learn to generate from a training distribution through a 2-player game. \\
+We want to sample from a complex, high dimensional training distribution. Although there is no direct way to do this, we can solve the problem by sampling from a simple distribution like random noise and learning transformation to training distribution. This complex transformation  can be represented using a neural network. The two players are
+\begin{itemize}
+	\item[$\diamond$] \textbf{Generator:} Tries to fool the discriminator by generating real-looking images
+	\item[$\diamond$] \textbf{Discriminator:} Tries to distinguish between real and fake images
+\end{itemize}
+We train both jointly in a minimax game.
+\begin{equation}
+	\min_{\theta_g} \max_{\theta_d} \Big [\mathbb{E}_{x \sim p_{data}}\log D_{\theta_d}(x) + \mathbb{E}_{z \sim p(z)} \log(1- D_{\theta_d}(G_{\theta_g} (z)))\Big]
+\end{equation}
+where $D_{\theta_d}(\cdot)$ is the discriminator output for data and $G_{\theta_g}(\cdot)$ is the generated data. The discriminator wants to maximize the objective such that $D(x)$ is close to $1$ and $D(G(z))$ is close to 0 while the generator wants to minimize objective such that $D(G(z))$ is close to $1$. The solving ov the following problem is alternatively, first we maximize entire objective over $\theta_d$ and second we minimize the second term over $\theta_g$. Thus we do gradient ascent on discriminator but gradient descent on generator. Theoretically this works, but in practice the convergence is slow. Hence, an alternate objective is taken for the generator which is maximized, i.e
+\begin{equation}
+	\max_{\theta_g} \mathbb{E}_{z \sim p(z)} \log(D_{\theta_d}(G_{\theta_g}(z)))
+\end{equation}
+\begin{algorithm}
+\caption{GAN training algorithm}
+\end{algorithm}

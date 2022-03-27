@@ -361,9 +361,55 @@ If $\pi(x)$ satisfies the above equation, then $\pi(x)$ is a stationary distribu
 \begin{proof}
 $\sum_{x'} \pi(x') T(x' \to x) = \pi(x) \sum_{x'} T(x \to x') = \pi (x)$
 \end{proof}
+\begin{quest}
+Show that the transition function for Gibbs Sampling satisfies \textbf{DBE}, i.e
+\[P(\mathbf x) T(\mathbf x' | \mathbf x) = P(\mathbf x') T(\mathbf x | \mathbf x')\]
+\end{quest}
+\begin{ans}
+Note that since we are working with the Gibbs transition function, $\mathbf x$ and $\mathbf x'$ can differ only in one position. Let that position be $i$. Then for $\mathbf x' = x_i'$ we have
+\begin{align*}
+	P(\mathbf x) T(\mathbf x' | \mathbf x) &= \dfrac{1}{n} P(\mathbf x) T(x_i' | \mathbf x) \\ 
+	&= \dfrac{1}{n} P(\mathbf x) \dfrac{P(x_i', \mathbf x_{-i})}{\sum_{x_i'}P(x_i', \mathbf x_{-i})} \\
+	&= \dfrac{1}{n} P(\mathbf x)  \dfrac{P(\mathbf x')}{\sum_{x_i'}P(x_i', \mathbf x_{-i})} \\
+	&= P(\mathbf x') T(\mathbf x | \mathbf x')
+\end{align*}
+Hence, notice that $P(\mathbf x)$ is the stationary distribution under Gibbs Sampling.
+\end{ans}
 Now, a task is to choose $A$. We need to design $A$ to satisfy \textbf{DBE} for $x \neq x'$.
 \[\pi(x)T^Q(x\to x') A(x\to x') = \pi(x') T^Q (x' \to x) A(x' \to x)\]
 \begin{equation}
 	A(x \to x') = \min\bigg[1, \dfrac{\pi(x')T^Q(x' \to x)}{\pi(x) T^Q(x\to x')}\bigg]
 \end{equation}
-Given a desired stationary distribution $P(\mathbf x)$, designing the $A(\cdot)$ just requires the user provided $T^Q$ and the ratio of probabilities $\frac{P(\mathbf x')}{P(\mathbf x)}$.
+Given a desired stationary distribution $P(\mathbf x)$, designing the $A(\cdot)$ just requires the user provided $T^Q$ and the ratio of probabilities $\frac{P(\mathbf x')}{P(\mathbf x)}$. The proof that the above equation works is not tough to see. It is easy to see that either
+$\pi(x')T^Q(x' \to x) \geq \pi(x) T^Q(x\to x')$ or $\pi(x')T^Q(x' \to x) < \pi(x) T^Q(x\to x')$. In either case if $A(x \to x') < 1$, then $A(x' \to x) = 1$. Hence, just substituting with this result in \textbf{DBE} gives the required result.
+
+\begin{exmp}
+Say we want a stationary distribution
+\[\pi = [\pi_1, \pi_2, \pi_3] = \bigg[\dfrac{2}{Z}, \dfrac{3}{Z}, \dfrac{2}{Z} \bigg]\]
+In this, it is trivial to see $Z = 7$, but in more complex cases, it might not be. So we leave it as $Z$. Say we choose an arbitrary $T^Q$ and compute $A$. Say we have a uniform one, i.e
+\[T^Q (x \to x') = \dfrac{1}{3}\]
+We can see that \[A(1 \to 2) = \min\bigg[1, \dfrac{\pi(2) T^Q (1|2)}{\pi(1) T^Q (2|1)} \bigg] = \min\bigg[1, \dfrac{3}{2}\bigg] = 1\]
+Similarly, $A(2 \to 3) = 2/3$.
+\end{exmp}
+\subsection{Langevin Monte-Carlo}
+Sampling from an arbitrary differential function, say a neural network representing $P(\mathbf x)$. For example in audio, images. We write
+\begin{equation}
+	P(\mathbf x) = \dfrac{e^{-E_\theta(\mathbf x)}}{Z}
+\end{equation}
+where $E_\theta(\mathbf x) \mapsto \mathbb R$ is an arbitrary differentiable function in $\mathbf x$ and $Z_\theta$ is intractable to compute. Given two $\mathbf x$ and $\mathbf x'$, it is easy to compute the ratio
+\begin{equation}
+	\dfrac{P(\mathbf x)}{P(\mathbf x')} = \dfrac{e^{-E_\theta(\mathbf x)}}{e^{-E_\theta(\mathbf x')}}
+\end{equation}
+To design $T^Q(\mathbf x' | \mathbf x)$, we use the intuition that transitioning from any $\mathbf x$ to $\mathbf x'$ along directions of maximum increase in $\log P(\mathbf x)$ by using gradients.
+\begin{equation}
+	\mathbf x' = \mathbf x + \tau \nabla_\mathbf{x} \log P(\mathbf x) = \mathbf x - \tau \nabla_\mathbf x E_\theta(\mathbf x)
+\end{equation}
+To make the transitions probabilistic, we add small Gaussian noise.
+\begin{equation}
+	\mathbf x' = \mathbf x - \tau \nabla_\mathbf x E_\theta(\mathbf x) + \sqrt{2\tau} \xi
+\end{equation}
+where $\xi \sim \mathcal{N}(\mathbf 0, I_d)$. With this, we can write
+\begin{align}
+	T^Q(\mathbf x \to \mathbf x') &= \dfrac{1}{\sqrt{2\pi} 2\tau} \exp\bigg(-\dfrac{1}{4\tau} \|\mathbf x' - \mathbf x + \tau\nabla_\mathbf{x} E_\theta(\mathbf x) \|^2\bigg) \\
+	A(\mathbf x \to \mathbf x') &= \min\bigg\{1, \dfrac{e^{-E_\theta(\mathbf x')} T^Q(\mathbf x' \to \mathbf x)}{e^{-E_\theta(\mathbf x)}T^Q(\mathbf x \to \mathbf x')}\bigg\}
+\end{align}

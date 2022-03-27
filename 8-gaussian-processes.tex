@@ -1,0 +1,69 @@
+\section{Gaussian Processes}
+The major applications for Gaussian processes are
+\begin{enumerate}
+	\item Bayesian Regression where we have a joint distribution over multiple predictions
+	\item Optimizing functions for which gradients are not available such as hyper-parameter optimization of deep models
+\end{enumerate}
+In normal regression, we have for $\mathbf x \in \mathbb{R}^d$, say we have $f(\mathbf x) = \sum_i w_i x_i + b$ where $w_1, \cdots, w_d, b$ are parameters. We can try to claim $y \sim \mathcal{N}(f(\mathbf x), \sigma^2)$ where $\sigma$ is independent of $\mathbf x$. In this case, we can train the parameters using MLE. \\
+Now say for $d = 1$, say given $y$ for the given $x$, we will for two points give independent predictions in the above case. But with Gaussian process, over the two points, we give the mean prediction value and the joint distribution over the values of the two points. In Gaussian process, we have a distribution over functions and not just a single function. Thus we have a mean, and will have a variance which varies with $\mathbf x$.
+\begin{defn}[Gaussian Processes]
+In a Gaussian process, we assume that for $\mathcal{X} \subseteq \mathbb{R}^d$ being the space of inputs, we pick $N$ inputs $x^1, \cdots, x^N$ and for these, the values of the function $f(x^1), \cdots, f(x^N)$ are random variables and we would like to get
+\begin{equation}
+\mathbb{P}\bigl(
+\begin{bmatrix}
+f(x^1) \\
+f(x^2) \\
+\vdots \\
+f(x^N)
+\end{bmatrix}
+\bigr) \sim \mathcal{N}( \mu, \Sigma)
+\end{equation}
+where elements of the covariance matrix are given as $\Sigma_{ij} = \kappa(x^i, x^j)$ where $\kappa(\cdot)$ is a kernel function. This can also be written as for $f(x^i) = y_i$, let $\mathbf y = [y_1, \cdots, y_n]^\top$. Then
+\begin{equation}
+	\mathcal{N}(\mathbf y, \mu, \Sigma) = \dfrac{1}{(2\pi |\Sigma|)^{\frac{k}{2}}}e^{-\frac{1}{2}(\mathbf y - \mu)^\top \Sigma^{-1} (\mathbf y - \mu)}
+\end{equation}
+The kernel functions tells us how the value changes from one $x$ to the other. An example would be the RBF kernel given as
+\begin{equation}
+	\kappa(x^i, x^j) \propto e^{-\frac{\|x^i - x^j\|^2}{\ell}}
+\end{equation}
+where $\ell$ is the length parameter. As we decrease $\ell$, the correlation decreases.
+\end{defn}
+\subsection{Properties of Multivariate Gaussians}
+Say we have one set of Gaussian distributed variables $y_A \sim \mathcal N(\mu_A, \Sigma_{AA})$ and $y_B \sim \mathcal{N}(\mu_B, \Sigma_{BB})$. If $y_A \ind y_B$, then
+\begin{equation}
+	y_A + y_B \sim \mathcal{N}(\mu_A + \mu_B, \Sigma_{AA} + \Sigma_{BB})
+\end{equation}
+Say a random variable $ Y = [Y_A Y_B]^\top$, where $Y$ is an $n$-dimensional vector split into two groups. Say $Y \sim \mathcal{N}(\mu, \Sigma)$, which can be written as
+\[\mu = \begin{bmatrix}
+	\mu_A \\ \mu_B
+\end{bmatrix} \quad \Sigma = \begin{bmatrix}
+\Sigma_{AA} & \Sigma_{AB} \\
+\Sigma_{BA} & \Sigma_{BB}
+\end{bmatrix}\]
+Say we want $P(Y_A | Y_B = O_B)$, then
+\begin{equation}
+	P(Y_A | Y_B = O_B) = \mathcal{N}(\mu_{A|B}, \Sigma_{A|B}) 
+\end{equation}
+where
+\begin{align}
+	\mu_{A|B} &= \mu_A + \Sigma_{AB}\Sigma_{BB}^{-1}(O_B - \mu_B) \\
+	\Sigma_{A|B} &= \Sigma_{AA} - \Sigma_{AB}\Sigma_{BB}^{-1}\Sigma_{BA}
+\end{align}
+To calculate the posterior distribution of the function, notice that 
+in many settings, we are interested in $Y = [y_1, \cdots, y_N, y^*]^\top$ found for $[x_1, \cdots, x_N, x^*]$ and we want to calculate $P(y^* | f(x^1) = y_1, \cdots, f(x^N)=y_N, x^*)$. This follows $\mathcal{N}(\mu_*, \overrightarrow{\sigma}^*)$. Denoting $\mathbf Y = [y_1, \cdots, y_N]^\top$ and $\mathbf X = [x_1, \cdots, x_N]^\top$, we write (assuming $\mu_A = 0$)
+\begin{align}
+\mu_*&= 0 + \kappa(x^*, \mathbf X) [\kappa(\mathbf X, \mathbf X)]^{-1}\mathbf Y \\
+\sigma^2_* &= \kappa(x^*, x^*) - \kappa(x^*, \mathbf X)[\kappa(\mathbf X, \mathbf X)]\kappa(\mathbf X, x^*)
+\end{align}
+In the above case, $x^*$ is a single point, but we can extend it to more dimensions. $\sigma^2$ will be large if $x^*$ is far from majority of the training data, and small if it is close to them. \\
+Now say we want to get distribution over $x^{N+1}, \cdots, x^{N+M}$ and these are jointly called $\mathbf X^*$. Hence we need $P(\mathbf Y^* | f(x_1) = y_1, \cdots, f(x_N)=y_N) \sim \mathcal{N}(\mu^*, \Sigma^*)$ where the expressions are same as above, just that the kernel gives matrices instead of scalars.
+\subsection{Hyperparameter Optimization}
+Say we want to do hyperparameter optimization of a deep model. Denote $\mathcal{X}$ as the space of hyperparameters such as number of layers, vocabulary size, learning rate etc. Given a kernel $\kappa(x^i, x^j)$ and $f(X)$ could be the validation loss/error of the deep model $\mathcal M$ with hyperparameters $X$. It is expensive to search over the entire space and hence we want to find the hyperparameter $X$ for which $f(X)$ is minimum. Our function $f(X)$ is not differentiable. \\
+Say we start with an $X$, and then the next step can be taken in two ways - either find another $X$ for which the function value is expected to be small, or find an $X$ where there is lot of uncertainty in the function value. Clearly, as GP give a distribution over the values, it can guide in choosing such an $X$. This is similar to the exploitation-exploration dilemma in reinforcement learning/bandit settings. GP provide control in choosing exploration over exploitation. We choose an acquisition function through which we choose $x$. A particular one is lowest confidence bound given as
+\begin{equation}
+	a_{LCB}(y_{best}, \mu, \sigma) = \mu - \kappa \sigma
+\end{equation}
+where $\kappa$ is the trade-off between exploitation and exploration. Small $\kappa \implies $ more exploitation and larger $\kappa$ explores more high variance points.
+\begin{algorithm}
+\caption{Bayesian Optimization with GP Prior}
+\end{algorithm}
